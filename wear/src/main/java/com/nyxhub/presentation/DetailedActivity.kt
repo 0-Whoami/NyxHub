@@ -9,17 +9,23 @@ import androidx.compose.material.icons.twotone.ColorLens
 import androidx.compose.material.icons.twotone.FontDownload
 import androidx.compose.material.icons.twotone.KeyboardCommandKey
 import androidx.compose.material.icons.twotone.Wallpaper
-import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material.Text
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.presentation.ui.Button
 import com.termux.nyxhub.R
 
 class DetailedActivity: ComponentActivity() {
+    @OptIn(ExperimentalHorologistApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         setContent {
-            ScalingLazyColumn {
+            val state= rememberScalingLazyListState()
+            ScalingLazyColumn(state = state, modifier = Modifier.rotaryWithScroll(state)) {
                 item { 
                     Text(text = "Settings", fontFamily = font1, color = primary_color)
                 }

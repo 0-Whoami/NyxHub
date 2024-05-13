@@ -115,7 +115,7 @@ object NyxConstants {
      * Termux app storage home directory path
      */
     // Default: "/data/data/com.termux/files/home/storage"
-    private const val TERMUX_STORAGE_HOME_DIR_PATH: String = "$TERMUX_HOME_DIR_PATH/storage"
+    const val TERMUX_STORAGE_HOME_DIR_PATH: String = "$TERMUX_HOME_DIR_PATH/storage"
 
     /**
      * Termux app storage home directory
