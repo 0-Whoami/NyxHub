@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -19,6 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,22 +36,31 @@ class TextEditor : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val file = File(intent.getStringExtra("file")!!)
         setContent {
-            var name by remember { mutableStateOf(if (file.isDirectory)"Untitled.sh" else file.name) }
-            var content by remember { mutableStateOf(if (file.isDirectory)"echo Hi" else file.readText()) }
-            ScalingLazyColumn(contentPadding = PaddingValues(10.dp), anchorType = ScalingLazyListAnchorType.ItemStart) {
+            var name by remember { mutableStateOf(if (file.isDirectory) "Untitled.sh" else file.name) }
+            var content by remember { mutableStateOf(if (file.isDirectory) "echo Hi" else file.readText()) }
+            ScalingLazyColumn(
+                contentPadding = PaddingValues(10.dp),
+                anchorType = ScalingLazyListAnchorType.ItemStart
+            ) {
                 item {
                     BasicTextField(
                         value = name,
                         onValueChange = { name = it },
-                        textStyle = TextStyle(fontSize = 20.sp, color = primary_color, fontFamily = font1)
+                        textStyle = TextStyle(
+                            fontSize = 20.sp,
+                            color = primary_color,
+                            fontFamily = font1
+                        )
                     )
                 }
                 item {
-                    BasicTextField(modifier = Modifier.defaultMinSize(minHeight = 200.dp), value = content,
+                    BasicTextField(modifier = Modifier.defaultMinSize(minHeight = 200.dp),
+                        value = content,
                         onValueChange = { content = it },
                         textStyle = TextStyle(fontFamily = font1, color = primary_color),
                         decorationBox = {
-                            Column(verticalArrangement = Arrangement.SpaceBetween,
+                            Column(
+                                verticalArrangement = Arrangement.SpaceBetween,
                                 modifier = Modifier
                                     .background(
                                         surfaceColor, RoundedCornerShape(25.dp)
@@ -55,19 +68,30 @@ class TextEditor : ComponentActivity() {
                                     .padding(10.dp)
                             ) {
                                 it()
-                                Button(modifier = Modifier.padding(5.dp).align(Alignment.End), icon = Icons.TwoTone.Save, text = "Save", color = true) {
-                                    if (file.isDirectory){
-                                        File(file,name).also {
+                                Button(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(25))
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawRect(primary_color, blendMode = BlendMode.Exclusion)
+                                    }
+                                    .padding(10.dp)
+                                    .align(Alignment.End),
+                                    icon = Icons.TwoTone.Save,
+                                    text = "Save"
+                                ) {
+                                    if (file.isDirectory) {
+                                        File(file, name).also {
                                             it.createNewFile()
                                             it.setWritable(true)
                                             it.setReadable(true)
                                             it.setExecutable(true)
                                             it.writeText(content)
                                         }
-                                    }else{
+                                    } else {
                                         file.writeText(content)
-                                        if (name!=file.name){
-                                            file.renameTo(File(file.parentFile,name))
+                                        if (name != file.name) {
+                                            file.renameTo(File(file.parentFile, name))
                                         }
                                     }
 

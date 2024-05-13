@@ -14,16 +14,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Add
+import androidx.compose.material.icons.twotone.Bookmark
 import androidx.compose.material.icons.twotone.Cancel
 import androidx.compose.material.icons.twotone.Delete
 import androidx.compose.material.icons.twotone.Done
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.twotone.KeyboardCommandKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -32,8 +33,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +45,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.Text
+import com.nyxhub.nyx.Properties
+import com.nyxhub.presentation.ui.ButtonTransparent
 import com.termux.shared.termux.NyxConstants.CONFIG_PATH
 import java.io.File
 import java.io.FileInputStream
@@ -51,6 +57,7 @@ import java.io.ObjectOutputStream
 
 class KeyEditor : ComponentActivity() {
     private var blur by mutableStateOf(false)
+    private val properties=Properties("$CONFIG_PATH/keys")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadKeys()
@@ -132,34 +139,69 @@ class KeyEditor : ComponentActivity() {
             ) {
                 item { Text(text = "Add Key", fontFamily = font1, color = primary_color) }
                 item {
-                    OutlinedTextField(
+                    BasicTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
                         value = labelText,
                         textStyle = TextStyle(color = primary_color, fontFamily = font1),
                         onValueChange = { labelText = it },
-                        placeholder = {
-                            Text(
-                                text = "↵", fontFamily = font1, fontSize = 12.sp
+                        decorationBox = {
+                            if (labelText.isBlank()) Text(
+                                text = "↵",
+                                fontFamily = font1,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentSize()
+                                    .alpha(0.5f)
                             )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.TwoTone.Bookmark, contentDescription = null
+                                )
+                                it()
+                            }
                         },
-                        shape = RoundedCornerShape(50),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primary_color, cursorColor = primary_color)
+                        cursorBrush = SolidColor(primary_color)
                     )
                 }
                 item {
-                    OutlinedTextField(
+                    BasicTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
                         value = keycodeText,
                         textStyle = TextStyle(fontFamily = font1, color = primary_color),
                         onValueChange = { keycodeText = it },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        placeholder = {
-                            Text(
+                        decorationBox = {
+                            if (keycodeText.isBlank()) Text(
                                 text = "${KeyEvent.KEYCODE_ENTER}",
                                 fontFamily = font1,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentSize()
+                                    .alpha(0.5f)
                             )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Icon(
+                                    imageVector = Icons.TwoTone.KeyboardCommandKey,
+                                    contentDescription = null
+                                )
+                                it()
+                            }
                         },
-                        shape = RoundedCornerShape(50),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primary_color, cursorColor = primary_color)
+                        cursorBrush = SolidColor(primary_color)
                     )
                 }
 
@@ -178,19 +220,7 @@ class KeyEditor : ComponentActivity() {
 
     @Composable
     fun Button_1(icon: ImageVector, text: String, onClick: () -> Unit = {}) {
-        Row(
-            modifier = Modifier
-                .padding(5.dp)
-                .background(Color.White.copy(alpha = 0.3f), shape = RoundedCornerShape(50))
-                .padding(10.dp)
-                .fillMaxWidth()
-                .clickable { onClick();blur = false },
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(imageVector = icon, contentDescription = null)
-            androidx.wear.compose.material.Text(text = text, fontFamily = font1)
-        }
+        ButtonTransparent(icon = icon, text = text, onClick = { onClick();blur = false })
     }
 
     override fun onPause() {
@@ -201,25 +231,18 @@ class KeyEditor : ComponentActivity() {
     private val changedMap = mutableStateMapOf<String, Int>()
 
     private fun loadKeys() {
-        val keysMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/keys")).use { it.readObject() as HashMap<String, Int> }
-        } catch (e: Exception) {
-            mapOf()
-        }
-        changedMap.putAll(keysMap)
+        changedMap.clear()
+       properties.forEach { key, value ->
+           changedMap[key] = value.toInt()
+       }
     }
 
     private fun saveKeys() {
-        if (!File(CONFIG_PATH).exists()) File(CONFIG_PATH).mkdirs()
-        if (changedMap.isEmpty()) {
-            File("$CONFIG_PATH/keys").delete()
-            return
+        properties.map.clear()
+        changedMap.forEach { (key, value) ->
+            properties.map[key] = value.toString()
         }
-        val map = hashMapOf<String, Int>()
-        map.putAll(changedMap)
-        ObjectOutputStream(FileOutputStream("$CONFIG_PATH/keys")).use {
-            it.writeObject(map)
-        }
+        properties.save()
     }
 
 

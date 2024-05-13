@@ -70,8 +70,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.scale
@@ -82,6 +80,8 @@ import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.file.FileChooser
+import com.nyxhub.nyx.Properties
+import com.nyxhub.presentation.ui.ButtonTransparent
 import com.nyxhub.presentation.ui.Loading
 import com.termux.shared.termux.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
@@ -95,7 +95,8 @@ import java.io.ObjectOutputStream
 
 const val EXTRA_NORMAL_BACKGROUND: String = "$CONFIG_PATH/wallpaper.jpg"
 const val EXTRA_BLUR_BACKGROUND: String = "$CONFIG_PATH/wallpaperBlur.jpg"
-val primary_color =Color.White
+val primary_color = Color.White
+
 class BackgroundManager : ComponentActivity() {
     private var enableBlur by mutableStateOf(true)
     private var enableBorder by mutableStateOf(true)
@@ -106,18 +107,14 @@ class BackgroundManager : ComponentActivity() {
     private var DetailedBlur by mutableFloatStateOf(.15f)
     private var font_size by mutableIntStateOf(14)
     private var density = 1f
+    private val properties = Properties("$CONFIG_PATH/config")
     private fun loadValues() {
-        val settingsMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/configConsole")).use { it.readObject() as Map<String,Any> }
-        } catch (e: Exception) {
-            return
-        }
-        font_size = (settingsMap["font_size"] ?: font_size) as Int
+        font_size =properties.getInt("font_size", 14)
+        enableBlur = properties.getBoolean("blur", true)
+        enableBorder = properties.getBoolean("border", true)
     }
-    private fun saveValues() {
-        val map = mapOf("font_size" to font_size)
-        ObjectOutputStream(FileOutputStream("$CONFIG_PATH/configConsole")).use { it.writeObject(map) }
-    }
+
+
     @SuppressLint("InvalidFragmentVersionForActivityResult")
     @RequiresApi(Build.VERSION_CODES.S)
     private val result = registerForActivityResult(
@@ -155,7 +152,7 @@ class BackgroundManager : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        density=resources.displayMetrics.scaledDensity
+        density = resources.displayMetrics.scaledDensity
         setContent {
             Ui()
         }
@@ -163,44 +160,22 @@ class BackgroundManager : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        CoroutineScope(Dispatchers.IO).launch { loadBool();loadWallpapers();loadValues() }
+        CoroutineScope(Dispatchers.IO).launch { loadWallpapers();loadValues() }
     }
 
     override fun onPause() {
         super.onPause()
-        CoroutineScope(Dispatchers.IO).launch { saveBool();saveValues() }
+        CoroutineScope(Dispatchers.IO).launch {
+            properties.put("font_size", font_size)
+            properties.put("blur", enableBlur)
+            properties.getBoolean("border", enableBorder)
+            properties.save()}
     }
 
-
-    private fun loadBool() {
-        val settingsMap = try {
-            ObjectInputStream(FileInputStream("$CONFIG_PATH/config")).use { it.readObject() as Map<String, Boolean> }
-        } catch (e: Exception) {
-            return
-        }
-        enableBorder = settingsMap["border"] ?: true
-        enableBlur = settingsMap["blur"] ?: true
-        DetailedBlur =
-            getSharedPreferences("settings", MODE_PRIVATE).getFloat("DetailedBlur", 0.15f)
-    }
-
-    private fun saveBool() {
-        try {
-            ObjectOutputStream(FileOutputStream("$CONFIG_PATH/config")).use {
-                it.writeObject(
-                    mapOf(
-                        "border" to enableBorder, "blur" to enableBlur
-                    )
-                )
-            }
-        } catch (e: Exception) {
-        }
-    }
 
 
     @RequiresApi(Build.VERSION_CODES.S)
     @OptIn(ExperimentalHorologistApi::class)
-    @Preview(device = Devices.WEAR_OS_SMALL_ROUND)
     @Composable
     private fun Ui() {
         val state = rememberScalingLazyListState()
@@ -374,22 +349,25 @@ class BackgroundManager : ComponentActivity() {
                     .pointerInput(Unit) {
                         detectTapGestures {
                             if (it.x > size.width / 2) {
-                                if (font_size < 100)
-                                    font_size++
+                                if (font_size < 100) font_size++
                             } else {
-                                if (font_size > 1)
-                                    font_size--
+                                if (font_size > 1) font_size--
                             }
                         }
-                    }, horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically){
+                    },
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
-                        imageVector = Icons.TwoTone.TextDecrease,
-                        contentDescription = null
+                        imageVector = Icons.TwoTone.TextDecrease, contentDescription = null
                     )
-                    Text(fontFamily = font1, text = "${font_size}sp", fontSize = (font_size/density).sp)
+                    Text(
+                        fontFamily = font1,
+                        text = "${font_size}sp",
+                        fontSize = (font_size / density).sp
+                    )
                     Icon(
-                        imageVector = Icons.TwoTone.TextIncrease,
-                        contentDescription = null
+                        imageVector = Icons.TwoTone.TextIncrease, contentDescription = null
                     )
                 }
             }
@@ -425,19 +403,7 @@ class BackgroundManager : ComponentActivity() {
 
     @Composable
     fun Button(icon: ImageVector, text: String, onClick: () -> Unit = {}) {
-        Row(
-            modifier = Modifier
-                .padding(5.dp)
-                .background(primary_color.copy(alpha = 0.3f), shape = RoundedCornerShape(50))
-                .padding(10.dp)
-                .fillMaxWidth(.5f)
-                .clickable { popup = false;onClick(); },
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(imageVector = icon, contentDescription = null)
-            Text(text = text, fontFamily = font1)
-        }
+        ButtonTransparent(icon = icon, text = text, onClick = { popup = false;onClick() })
     }
 
     @Composable

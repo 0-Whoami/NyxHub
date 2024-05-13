@@ -1,258 +1,280 @@
 package com.nyxhub.presentation
 
-import android.os.Build
+import android.content.Context
+import android.content.Intent
+import android.graphics.BitmapFactory
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
-import android.system.Os
-import android.util.Pair
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.twotone.ChevronRight
-import androidx.compose.material.icons.twotone.Link
-import androidx.compose.material.icons.twotone.PhoneAndroid
-import androidx.compose.material.icons.twotone.Watch
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.material.Icon
+import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Text
-import com.nyxhub.file.FileUtils
-import com.nyxhub.presentation.ui.Cell
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
+import com.nyxhub.presentation.ui.FailedScreen
 import com.nyxhub.presentation.ui.Loading
-import com.termux.shared.termux.NyxConstants
+import com.termux.nyxhub.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.BufferedReader
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStreamReader
-import java.net.URL
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
+import kotlin.math.sin
 
+enum class NetWorkResponse { Loading, Failed, Success }
 class Presets : ComponentActivity() {
-    private var label by mutableStateOf("")
-    private var loading by mutableStateOf(false)
+
+    class RemoteFile(
+        val name: String,
+        val url: String,
+        var icon: MutableState<ImageBitmap?> = mutableStateOf(null)
+    )
+    private fun checkForInternet(context: Context): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        val networkCapabilities =
+            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+        return networkCapabilities != null &&
+                (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
+    }
+    private val scope = CoroutineScope(Dispatchers.IO)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        CoroutineScope(Dispatchers.IO).launch {print()}
+        val listOfNYXOptions = mutableListOf<RemoteFile>()
+        val listOfGUIOptions = mutableListOf<RemoteFile>()
+        var state: NetWorkResponse by mutableStateOf(NetWorkResponse.Loading)
+        var state2: NetWorkResponse by mutableStateOf(NetWorkResponse.Loading)
+        println("internet: ${checkForInternet(this)}")
         setContent {
-            var url by remember { mutableStateOf(determineZipUrl()) }
-            ScalingLazyColumn(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .blur(if (loading) 10.dp else 0.dp)
-            ) {
-                item{ Text(text = "Bootstrap Installer", fontFamily = font1) }
-                item {
-                    Row {
-                        Cell(icon = Icons.TwoTone.PhoneAndroid, text = "Default", modifier = Modifier.weight(1f)){ setupBootstrap(determineZipUrl()) }
-                        Cell(icon = Icons.TwoTone.Watch, text = "Nyx", modifier = Modifier.weight(1f)){ setupBootstrap(determineZipUrl()) }
-                    }
-                }
-                item { Text(text = "Custom Bootstrap", fontFamily = font1) }
-                item{
-                    OutlinedTextField(
-                        label = { Text(text = "URL", fontFamily = font1)},
-                        value = url,
-                        onValueChange = { url = it },
-                        textStyle = TextStyle(color = Color.White, fontFamily = font1),
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.TwoTone.Link, contentDescription = null
-                            )
-                        },
-                        trailingIcon = { Icon(
-                            imageVector = Icons.TwoTone.ChevronRight,
-                            contentDescription = null,
-                            tint = Color.Black,
-                            modifier = Modifier.clickable { setupBootstrap(url) }.background(Color.White,
-                                CircleShape).padding(5.dp)
-                        )},
-                        modifier = Modifier.padding(5.dp),
-                        shape = RoundedCornerShape(50),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.White)
-                    )
-                }
-            }
-            if (loading) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxSize().clickable {  }
-                ) {
-                    Loading()
-                    Text(text = label, fontFamily = font1)
-                }
-            }
-        }
-    }
-
-    //TODO UPDATE {*Compile first}
-    private fun determineZipUrl(): String {
-        return "https://github.com/termux/termux-packages/releases/latest/download/bootstrap-" + determineTermuxArchName() + ".zip"
-    }
-
-    private fun determineTermuxArchName(): String {
-        for (androidArch in Build.SUPPORTED_ABIS) {
-            when (androidArch) {
-                "armeabi-v7a" -> return "arm"
-                "x86_64" -> return "x86_64"
-            }
-        }
-        return ""
-    }
-
-    private fun ensureDirectoryExists(directory: File): Boolean {
-        return FileUtils.createDirectoryFile(directory.absolutePath)
-    }
-    private fun String.deleteRecursively():Boolean{return File(this).deleteRecursively()}
-    private fun setupBootstrap(url: String) {
-        loading = true
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                var error: Boolean
-                label = "Cleaning up..."
-                error = NyxConstants.TERMUX_FILES_DIR_PATH.deleteRecursively()
-                if (!error) {
-                    label = "Can't delete ${NyxConstants.TERMUX_FILES_DIR_PATH}"
-                    return@launch
-                }
-                // Delete prefix staging directory or any file at its destination
-                error = NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH.deleteRecursively()
-                if (!error) {
-                    label = "Can't delete staging ${NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH}"
-                    return@launch
-                }
-                // Delete prefix directory or any file at its destination
-                error = NyxConstants.TERMUX_PREFIX_DIR_PATH.deleteRecursively()
-
-                if (!error) {
-                    label = "Can't delete ${NyxConstants.TERMUX_PREFIX_DIR_PATH}"
-                    return@launch
-                }
-                // Create prefix staging directory if it does not already exist and set required permissions
-                error = FileUtils.isTermuxPrefixStagingDirectoryAccessible(
-                    createDirectoryIfMissing = true, setMissingPermissions = true
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                var firstpage by remember { mutableStateOf(true) }
+                val animation by animateFloatAsState(
+                    targetValue = if (firstpage) 0f else 1f, label = ""
                 )
-                if (!error) {
-                    label = "Can't create ${NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH}"
-                    return@launch
-                }
-                // Create prefix directory if it does not already exist and set required permissions
-                error = FileUtils.isTermuxPrefixDirectoryAccessible(
-                    createDirectoryIfMissing = true, setMissingPermissions = true
+                val scalingState = rememberScalingLazyListState()
+                Pages(
+                    if (firstpage) state else state2,
+                    if (firstpage) listOfNYXOptions else listOfGUIOptions,
+                    scalingState
                 )
-                if (!error) {
-                    label = "Can't create ${NyxConstants.TERMUX_PREFIX_DIR_PATH}"
-                    return@launch
-                }
-                val buffer = ByteArray(8096)
-                val symlinks: MutableList<Pair<String, String>> = ArrayList(50)
-                val zipUrl = URL(url)
-                label = "Downloading...\nPlease be patient"
-                ZipInputStream(zipUrl.openStream()).use { zipInput ->
-                    var zipEntry: ZipEntry?
-                    while (zipInput.nextEntry.also { zipEntry = it } != null) {
-                        if (zipEntry!!.name == "SYMLINKS.txt") {
-                            val symlinksReader = BufferedReader(InputStreamReader(zipInput))
-                            var line: String?
-                            while (symlinksReader.readLine().also { line = it } != null) {
-                                val parts =
-                                    line!!.split("←".toRegex()).dropLastWhile { it.isEmpty() }
-                                        .toTypedArray()
-                                if (parts.size != 2) {
-                                    label = "Malformed symlink line: $line"
-                                    return@launch
-                                }
-                                val oldPath = parts[0]
-                                val newPath =
-                                    NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH + "/" + parts[1]
-                                symlinks.add(
-                                    Pair.create(
-                                        oldPath, newPath
-                                    )
-                                )
-                                error = ensureDirectoryExists(
-                                    File(newPath).parentFile!!
-                                )
-                                if (!error) {
-                                    label = "Can't create symlink directory, $newPath"
-                                    return@launch
-                                }
-                            }
-                        } else {
-                            val zipEntryName = zipEntry!!.name
-                            val targetFile = File(
-                                NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH, zipEntryName
-                            )
-                            val isDirectory = zipEntry!!.isDirectory
-                            error =
-                                ensureDirectoryExists(if (isDirectory) targetFile else targetFile.parentFile)
-                            if (!error) {
-                                label = "Can't create symlink directory, $targetFile"
-                                return@launch
-                            }
-                            if (!isDirectory) {
-                                FileOutputStream(targetFile).use { outStream ->
-                                    var readBytes: Int
-                                    while (zipInput.read(buffer).also { readBytes = it } != -1) {
-                                        outStream.write(buffer, 0, readBytes)
+
+                LaunchedEffect(key1 = firstpage) {
+                    if (firstpage) {
+                        if (listOfNYXOptions.isEmpty()) {
+                            scope.launch {
+                                state=getData(
+                                    "$apiUrl/flavours/Nyx"
+                                ) {
+                                    for (i in 0..<it.length()) {
+                                        val obj = it.getJSONObject(i)
+                                        if (obj.getString("type") == "dir") listOfNYXOptions.add(
+                                            RemoteFile(
+                                                obj.getString(
+                                                    "name"
+                                                ), obj.getString("url")
+                                            )
+                                        )
                                     }
                                 }
-                                if (zipEntryName.startsWith("bin/") || zipEntryName.startsWith("libexec") || zipEntryName.startsWith(
-                                        "lib/apt/apt-helper"
-                                    ) || zipEntryName.startsWith("lib/apt/methods")
+
+                            }
+                        }
+                    } else {
+                        if (listOfGUIOptions.isEmpty()) {
+                            scope.launch {
+                                state2=getData(
+                                    "$apiUrl/flavours/GUI"
                                 ) {
-                                    Os.chmod(targetFile.absolutePath, 448)
+                                    for (i in 0..<it.length()) {
+                                        val obj = it.getJSONObject(i)
+                                        if (obj.getString("type") == "dir") listOfGUIOptions.add(
+                                            RemoteFile(
+                                                obj.getString(
+                                                    "name"
+                                                ), obj.getString("url")
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-                if (symlinks.isEmpty()) {
-                    label = "No Symlink text"
-                    return@launch
+
+                AnimatedVisibility(enter = slideInVertically { it },
+                    exit = slideOutVertically { it },
+                    visible = !scalingState.isScrollInProgress && (if (firstpage)state else state2) != NetWorkResponse.Loading,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset(y = (-10).dp)) {
+                    val animator = (1 - 0.2f * sin(3.14f * animation))
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .background(
+                                surfaceColor, RoundedCornerShape(50)
+                            )
+                            .padding(5.dp)
+                            .drawWithContent {
+                                drawContent()
+                                drawRoundRect(
+                                    primary_color,
+                                    cornerRadius = CornerRadius(size.height / 2, size.height / 2),
+                                    size = size.copy(width = size.width / 2) * animator,
+                                    blendMode = BlendMode.Exclusion,
+                                    topLeft = Offset(
+                                        size.width / 2 * animation, size.height * (1 - animator) / 2
+                                    )
+                                )
+                            }
+                            .padding(5.dp)) {
+                        Text(
+                            text = "CLI",
+                            fontFamily = font1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { firstpage = true },
+                            color = primary_color,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "GUI",
+                            fontFamily = font1,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { firstpage = false },
+                            color = primary_color,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-                for (symlink in symlinks) {
-                    Os.symlink(symlink.first, symlink.second)
-                }
-                if (!NyxConstants.TERMUX_STAGING_PREFIX_DIR.renameTo(NyxConstants.TERMUX_PREFIX_DIR)) {
-                    throw RuntimeException("Moving termux prefix staging to prefix directory failed")
-                }
-            } catch (exception: Exception) {
-                label = exception.message ?: "Unknown error"
-                exception.printStackTrace()
+
             }
-            loading = false
-            label = "Waiting for files..."
-            runOnUiThread {
-                Toast.makeText(this@Presets, "Done!", Toast.LENGTH_LONG).show()
-                finish()
+
+        }
+    }
+
+    @OptIn(ExperimentalHorologistApi::class)
+    @Composable
+    fun Pages(
+        state: NetWorkResponse,
+        listOfNYXOptions: List<RemoteFile>,
+        scalingState: ScalingLazyListState
+    ) {
+        when (state) {
+            NetWorkResponse.Loading -> Loading()
+
+            NetWorkResponse.Failed -> FailedScreen()
+
+            NetWorkResponse.Success -> {
+                ScalingLazyColumn(
+                    anchorType = ScalingLazyListAnchorType.ItemStart,
+                    state = scalingState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .rotaryWithScroll(scalingState),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) { item { Text("Flavours") }
+                    items(listOfNYXOptions) {
+                        Catalogue(it = it)
+                    }
+                    item {  }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun Catalogue(it: RemoteFile) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(25))
+                .background(surfaceColor)
+                .fillMaxWidth()
+                .height(75.dp)
+                .clickable { startActivity(Intent(this@Presets, PresetViewer::class.java).putExtra("url",it.url))},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier.size(75.dp), contentAlignment = Alignment.Center
+            ) {
+                if (it.icon.value == null) Loading()
+                else Image(
+                    bitmap = it.icon.value!!,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Text(
+                text = it.name, fontFamily = font1
+            )
+        }
+        LaunchedEffect(Unit) {
+            if (it.icon.value==null)
+            scope.launch {
+                val failure: () -> Unit = {
+                    it.icon.value = ImageBitmap.imageResource(resources, R.drawable.network_error)
+                }
+                getData(it.url) { json ->
+                    for (i in 0..<json.length()) {
+                        val obj = json.getJSONObject(i)
+                        if (obj.getString("name").startsWith("icon")) {
+                            download(
+                                obj.getString("download_url"), failure
+                            ) { inp ->
+                                it.icon.value = BitmapFactory.decodeStream(inp).asImageBitmap()
+                            }
+                            return@getData
+                        }
+                    }
+                    failure()
+                }
             }
         }
     }
