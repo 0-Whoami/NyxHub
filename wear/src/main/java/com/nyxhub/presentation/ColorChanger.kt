@@ -3,6 +3,7 @@ package com.nyxhub.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -46,28 +46,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.PositionIndicator
-import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.nyx.Properties
+import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
+import com.nyxhub.presentation.ui.LazyList
 import com.termux.shared.termux.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONObject
-import java.io.File
 
 val surfaceColor = Color(0xff18181c)
 
 class ColorChanger : ComponentActivity() {
     private var blur by mutableStateOf(false)
-    private val properties=Properties("$CONFIG_PATH/colors")
+    private val properties = Properties("$CONFIG_PATH/colors")
     private val DEFAULT_COLORSCHEME = listOf(
         // 16 original colors. First 8 are dim. // black
         -0x1000000,  // dim red
@@ -339,107 +335,103 @@ class ColorChanger : ComponentActivity() {
         CoroutineScope(Dispatchers.IO).launch { loadColors() }
         setTheme(android.R.style.Theme_DeviceDefault)
         setContent {
-            val gridState = rememberScalingLazyListState()
+            rememberScalingLazyListState()
             var index by remember { mutableIntStateOf(0) }
             var text by remember { mutableStateOf("#000000") }
-            Scaffold(positionIndicator = { PositionIndicator(scalingLazyListState = gridState) }) {
-                ScalingLazyColumn(
-                    state = gridState,
-                    modifier = Modifier
-                        .background(Color(0xff0B0B0B))
-                        .blur(if (blur) 20.dp else 0.dp)
-                        .rotaryWithScroll(gridState),
-                ) {
-                    item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.animateContentSize()
-                        ) {
-                            val annotatedString = remember {
-                                buildAnnotatedString {
-                                    append("First 256 colors are indexed according to ")
+            LazyList(blur = blur) {
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.animateContentSize()
+                    ) {
+                        val annotatedString = remember {
+                            buildAnnotatedString {
+                                append("First 256 colors are indexed according to ")
 
-                                    pushStringAnnotation(
-                                        tag = "info",
-                                        annotation = "https://www.ditig.com/publications/256-colors-cheat-sheet"
-                                    )
-                                    withStyle(style = SpanStyle(color = Color(0xff8692FC))) {
-                                        append("xterm-256")
-                                    }
-                                    append("\n Note :\nColor 256 : Foreground Color\nColor257 : Background color\nColor258 : Cursor color\nColor259 : Primary Ui color\nColor260: Secondary Ui Color")
-                                    pop()
+                                pushStringAnnotation(
+                                    tag = "info",
+                                    annotation = "https://www.ditig.com/publications/256-colors-cheat-sheet"
+                                )
+                                withStyle(style = SpanStyle(color = Color(0xff8692FC))) {
+                                    append("xterm-256")
                                 }
+                                append("\n Note :\nColor 256 : Foreground Color\nColor257 : Background color\nColor258 : Cursor color\nColor259 : Primary Ui color\nColor260: Secondary Ui Color")
+                                pop()
                             }
-                            var help by remember {
-                                mutableStateOf(false)
-                            }
-
-                            if (help) {
-                                Text(
-                                    text = annotatedString,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White,
-                                    fontFamily = font1
-                                )
-                            } else {
-                                Text(
-                                    text = "Colors",
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White,
-                                    fontFamily = font1
-                                )
-                            }
-                            Icon(imageVector = Icons.AutoMirrored.TwoTone.Help,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .clickable { help = !help }
-                                    .padding(5.dp),
-                                tint = Color.White)
-
                         }
-                    }
-                    items(colors.size) {
-                        Row(verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(surfaceColor)
-                                .height(60.dp)
-                                .fillMaxWidth()
-                                .clickable {
-                                    index = it;text = "#${colors[it].toHexString()}"; blur = true
-                                }) {
-                            Box(
-                                modifier = Modifier
-                                    .aspectRatio(1f)
-                                    .background(color = Color(colors[it]))
-                            )
+                        var help by remember {
+                            mutableStateOf(false)
+                        }
+
+                        if (help) {
                             Text(
-                                text = "Color $it",
-                                color = Color(0xffFEF9EF),
-                                fontFamily = font1,
-                                modifier = Modifier.padding(10.dp)
+                                text = annotatedString,
+                                textAlign = TextAlign.Center,
+                                color = Color.White,
+                                fontFamily = font1
                             )
-                            if (DEFAULT_COLORSCHEME[it] != colors[it]) Icon(imageVector = Icons.TwoTone.RestartAlt,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .clickable {
-                                        colors[it] = DEFAULT_COLORSCHEME[it]
-                                        properties.remove(it)
-                                    }
-                                    .padding(10.dp),
-                                tint = Color.White)
+                        } else {
+                            Text(
+                                text = "Colors",
+                                textAlign = TextAlign.Center,
+                                color = Color.White,
+                                fontFamily = font1
+                            )
                         }
+                        Icon(imageVector = Icons.AutoMirrored.TwoTone.Help,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .clickable { help = !help }
+                                .padding(5.dp),
+                            tint = Color.White)
 
                     }
-
+                }
+                items(colors.size) {
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable {
+                                index = it;text = "#${colors[it].toHexString()}"; blur = true
+                            }
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(surfaceColor)
+                            .height(60.dp)
+                            .fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .background(color = Color(colors[it]))
+                        )
+                        Text(
+                            text = "Color $it",
+                            color = Color(0xffFEF9EF),
+                            fontFamily = font1,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                        if (DEFAULT_COLORSCHEME[it] != colors[it]) Icon(imageVector = Icons.TwoTone.RestartAlt,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .clickable {
+                                    colors[it] = DEFAULT_COLORSCHEME[it]
+                                    properties.remove(it)
+                                }
+                                .padding(10.dp),
+                            tint = Color.White)
+                    }
 
                 }
-                if (blur) Column(verticalArrangement = Arrangement.Center,
+
+
+            }
+            AnimatedVisibility(visible = blur) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(10.dp)) {
+                        .padding(10.dp)
+                ) {
                     val newColor = try {
                         Color(text.toColorInt())
                     } catch (e: Exception) {
@@ -471,12 +463,12 @@ class ColorChanger : ComponentActivity() {
                     )
                     Button(icon = Icons.TwoTone.Done, text = "Apply") {
                         colors[index] = newColor.toArgb()
-                        properties.put(index,colors[index])
+                        properties.put(index, colors[index])
                     }
                     Button(icon = Icons.TwoTone.Cancel, text = "Cancel")
                 }
-
             }
+
 
         }
     }

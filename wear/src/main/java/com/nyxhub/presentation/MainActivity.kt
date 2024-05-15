@@ -31,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -45,15 +44,12 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeTextDefaults
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.file.FileUtils
 import com.nyxhub.presentation.ui.Button
+import com.nyxhub.presentation.ui.LazyList
 import com.termux.nyxhub.R
 import com.termux.shared.termux.NyxConstants
 import kotlinx.coroutines.CoroutineScope
@@ -76,57 +72,6 @@ fun startNyx(context: Context) {
         )
     })
 }
-
-@Language("AGSL")
-private const val SHADER3 = """
-    uniform float2 size;
-    uniform float time;
-    
-    
-float rand(float2 n) { 
-    return fract(sin(dot(n, float2(12.9898, 4.1414))) * 43758.5453);
-}
-
-float noise(float2 p){
-    float2 ip = floor(p);
-    float2 u = fract(p);
-    u = u*u*(3.0-2.0*u);
-
-    float res = mix(
-        mix(rand(ip),rand(ip+float2(1.0,0.0)),u.x),
-        mix(rand(ip+float2(0.0,1.0)),rand(ip+float2(1.0,1.0)),u.x),u.y);
-    return res*res;
-}
-
-const mat2 mtx = mat2( 0.80,  0.60, -0.60,  0.80 );
-
-float fbm( float2 p )
-{
-    float f = 0.0;
-
-    f += 0.500000*noise( p + time  ); p = mtx*p*2.02;
-    f += 0.031250*noise( p ); p = mtx*p*2.01;
-    f += 0.250000*noise( p ); p = mtx*p*2.03;
-    f += 0.125000*noise( p ); p = mtx*p*2.01;
-    f += 0.062500*noise( p ); p = mtx*p*2.04;
-    f += 0.015625*noise( p + sin(time) );
-
-    return f/0.96875;
-}
-
-float pattern(float2 p )
-{
-	return fbm( p + fbm( p + fbm( p ) ) );
-}
-
-half4 main( float2 fragCoord )
-{
-    float2 uv = fragCoord/size.x;
-	float shade = pattern(uv)*0.5;
-    return half4(float3(shade),1);
-}
-
-"""
 
 @Language("AGSL")
 private const val SHADER2 = """
@@ -223,23 +168,22 @@ class MainActivity : ComponentActivity() {
             FileUtils.isAppsTermuxAppDirectoryAccessible(
                 true, setMissingPermissions = true
             )
-            setupStorageSymlinks()
+            setupStorageSymlinks(this@MainActivity)
             if (!File(NyxConstants.CONFIG_PATH).exists()) File(NyxConstants.CONFIG_PATH).mkdirs()
         }
         setContent {
             Page_1()
         }
     }
+
     private val shape = RoundedCornerShape(25)
 
-    @OptIn(ExperimentalHorologistApi::class)
     @Composable
     fun Page_1() {
         var time by remember { mutableFloatStateOf(0f) }
-        val state = rememberScalingLazyListState()
         val scope = rememberCoroutineScope()
 
-        ScalingLazyColumn(state = state, modifier = Modifier.rotaryWithScroll(state)) {
+        LazyList {
             item {
                 Text(
                     text = TimeTextDefaults.timeSource("hh:mm").currentTime, fontFamily = font1
@@ -283,13 +227,13 @@ class MainActivity : ComponentActivity() {
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.SpaceEvenly,
                         modifier = Modifier
+                            .clickable {
+                                startActivity(this@MainActivity, DataChannel::class.java)
+                            }
                             .fillMaxSize()
                             .clip(shape)
                             .weight(1f)
-                            .background(primary_color)
-                            .clickable {
-                                startActivity(this@MainActivity, DataChannel::class.java)
-                            }) {
+                            .background(primary_color)) {
                         Icon(
                             imageVector = Icons.TwoTone.SettingsRemote,
                             contentDescription = null,
@@ -305,25 +249,26 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .weight(1f)
                     ) {
-                        Text(
-                            text = "Script", modifier = Modifier
-
-                                .fillMaxSize()
-                                .weight(1f)
-                                .background(surfaceColor, RoundedCornerShape(50))
-                                .wrapContentHeight()
+                        Text(text = "Script",
+                            modifier = Modifier
                                 .clickable {
                                     startActivity(
                                         this@MainActivity, Scripts::class.java
                                     )
-                                }, fontFamily = font1, textAlign = TextAlign.Center
-                        )
-                        Icon(imageVector = Icons.Rounded.PlayArrow, null, modifier = Modifier
-
-                            .fillMaxSize()
-                            .border(1.dp, primary_color, RoundedCornerShape(50))
-                            .weight(1f)
-                            .clickable { startNyx(this@MainActivity) })
+                                }
+                                .fillMaxSize()
+                                .weight(1f)
+                                .background(surfaceColor, RoundedCornerShape(50))
+                                .wrapContentHeight(),
+                            fontFamily = font1,
+                            textAlign = TextAlign.Center)
+                        Icon(imageVector = Icons.Rounded.PlayArrow,
+                            null,
+                            modifier = Modifier
+                                .clickable { startNyx(this@MainActivity) }
+                                .fillMaxSize()
+                                .border(1.dp, primary_color, RoundedCornerShape(50))
+                                .weight(1f))
                     }
                 }
             }
@@ -331,101 +276,100 @@ class MainActivity : ComponentActivity() {
                 Icon(imageVector = Icons.TwoTone.ExpandMore,
                     contentDescription = null,
                     modifier = Modifier
-                        .fillMaxWidth()
                         .clickable {
                             startActivity(
                                 this@MainActivity, DetailedActivity::class.java
                             )
-                        })
+                        }
+                        .fillMaxWidth())
             }
         }
 
         LaunchedEffect(key1 = time) {
             scope.launch {
-                time +=  0.01f
+                time += 0.01f
                 delay(10000)
             }
         }
     }
 
-    private fun setupStorageSymlinks() {
-        try {
-            val storageDir = NyxConstants.TERMUX_STORAGE_HOME_DIR
-            val error: Boolean = storageDir.deleteRecursively() && storageDir.mkdirs()
-            if (!error) {
-                return
-            }
-            // Get primary storage root "/storage/emulated/0" symlink
-            val sharedDir = Environment.getExternalStorageDirectory()
-            Os.symlink(
-                sharedDir.absolutePath, File(storageDir, "utils").absolutePath
-            )
-            val documentsDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-            Os.symlink(
-                documentsDir.absolutePath, File(storageDir, "documents").absolutePath
-            )
-            val downloadsDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            Os.symlink(
-                downloadsDir.absolutePath, File(storageDir, "downloads").absolutePath
-            )
-            val dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-            Os.symlink(
-                dcimDir.absolutePath, File(storageDir, "dcim").absolutePath
-            )
-            val picturesDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            Os.symlink(
-                picturesDir.absolutePath, File(storageDir, "pictures").absolutePath
-            )
-            val musicDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-            Os.symlink(
-                musicDir.absolutePath, File(storageDir, "music").absolutePath
-            )
-            val moviesDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-            Os.symlink(
-                moviesDir.absolutePath, File(storageDir, "movies").absolutePath
-            )
-            val podcastsDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
-            Os.symlink(
-                podcastsDir.absolutePath, File(storageDir, "podcasts").absolutePath
-            )
-            val audiobooksDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
-            Os.symlink(
-                audiobooksDir.absolutePath, File(storageDir, "audiobooks").absolutePath
-            )
-
-            // Create "Android/data/com.termux" symlinks
-            var dirs = getExternalFilesDirs(null)
-            if (dirs != null && dirs.isNotEmpty()) {
-                for (i in dirs.indices) {
-                    val dir = dirs[i] ?: continue
-                    val symlinkName = "external-$i"
-                    Os.symlink(
-                        dir.absolutePath, File(storageDir, symlinkName).absolutePath
-                    )
-                }
-            }
-            // Create "Android/media/com.termux" symlinks
-            dirs = externalMediaDirs
-            if (dirs != null && dirs.isNotEmpty()) {
-                for (i in dirs.indices) {
-                    val dir = dirs[i] ?: continue
-                    val symlinkName = "media-$i"
-                    Os.symlink(
-                        dir.absolutePath, File(storageDir, symlinkName).absolutePath
-                    )
-                }
-            }
-        } catch (error: Exception) {
-            error.printStackTrace()
+}
+fun setupStorageSymlinks(context: Context) {
+    try {
+        val storageDir = NyxConstants.TERMUX_STORAGE_HOME_DIR
+        val error: Boolean = storageDir.deleteRecursively() && storageDir.mkdirs()
+        if (!error) {
+            return
         }
+        // Get primary storage root "/storage/emulated/0" symlink
+        val sharedDir = Environment.getExternalStorageDirectory()
+        Os.symlink(
+            sharedDir.absolutePath, File(storageDir, "utils").absolutePath
+        )
+        val documentsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        Os.symlink(
+            documentsDir.absolutePath, File(storageDir, "documents").absolutePath
+        )
+        val downloadsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        Os.symlink(
+            downloadsDir.absolutePath, File(storageDir, "downloads").absolutePath
+        )
+        val dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+        Os.symlink(
+            dcimDir.absolutePath, File(storageDir, "dcim").absolutePath
+        )
+        val picturesDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        Os.symlink(
+            picturesDir.absolutePath, File(storageDir, "pictures").absolutePath
+        )
+        val musicDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+        Os.symlink(
+            musicDir.absolutePath, File(storageDir, "music").absolutePath
+        )
+        val moviesDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+        Os.symlink(
+            moviesDir.absolutePath, File(storageDir, "movies").absolutePath
+        )
+        val podcastsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
+        Os.symlink(
+            podcastsDir.absolutePath, File(storageDir, "podcasts").absolutePath
+        )
+        val audiobooksDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
+        Os.symlink(
+            audiobooksDir.absolutePath, File(storageDir, "audiobooks").absolutePath
+        )
 
+        // Create "Android/data/com.termux" symlinks
+        var dirs = context.getExternalFilesDirs(null)
+        if (dirs != null && dirs.isNotEmpty()) {
+            for (i in dirs.indices) {
+                val dir = dirs[i] ?: continue
+                val symlinkName = "external-$i"
+                Os.symlink(
+                    dir.absolutePath, File(storageDir, symlinkName).absolutePath
+                )
+            }
+        }
+        // Create "Android/media/com.termux" symlinks
+        dirs = context.externalMediaDirs
+        if (dirs != null && dirs.isNotEmpty()) {
+            for (i in dirs.indices) {
+                val dir = dirs[i] ?: continue
+                val symlinkName = "media-$i"
+                Os.symlink(
+                    dir.absolutePath, File(storageDir, symlinkName).absolutePath
+                )
+            }
+        }
+    } catch (error: Exception) {
+        error.printStackTrace()
     }
 
 }

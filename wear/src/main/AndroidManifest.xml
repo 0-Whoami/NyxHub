@@ -18,7 +18,7 @@
         android:supportsRtl="false"
         android:theme="@android:style/Theme.DeviceDefault">
         <activity
-            android:name="com.nyxhub.file.FileChooser"
+            android:name="com.nyxhub.nyx.FileChooser"
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"

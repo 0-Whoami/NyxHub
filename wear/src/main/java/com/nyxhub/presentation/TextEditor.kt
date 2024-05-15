@@ -23,12 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import com.nyxhub.presentation.ui.Button
+import com.nyxhub.presentation.ui.LazyList
 import java.io.File
 
 class TextEditor : ComponentActivity() {
@@ -38,10 +40,7 @@ class TextEditor : ComponentActivity() {
         setContent {
             var name by remember { mutableStateOf(if (file.isDirectory) "Untitled.sh" else file.name) }
             var content by remember { mutableStateOf(if (file.isDirectory) "echo Hi" else file.readText()) }
-            ScalingLazyColumn(
-                contentPadding = PaddingValues(10.dp),
-                anchorType = ScalingLazyListAnchorType.ItemStart
-            ) {
+            LazyList(anchorType = ScalingLazyListAnchorType.ItemStart) {
                 item {
                     BasicTextField(
                         value = name,
@@ -70,13 +69,10 @@ class TextEditor : ComponentActivity() {
                                 it()
                                 Button(modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(25))
-                                    .drawWithContent {
-                                        drawContent()
-                                        drawRect(primary_color, blendMode = BlendMode.Exclusion)
-                                    }
+                                    .background(primary_color, RoundedCornerShape(25))
                                     .padding(10.dp)
                                     .align(Alignment.End),
+                                    color = surfaceColor,
                                     icon = Icons.TwoTone.Save,
                                     text = "Save"
                                 ) {

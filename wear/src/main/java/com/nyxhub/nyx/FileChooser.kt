@@ -1,4 +1,4 @@
-package com.nyxhub.file
+package com.nyxhub.nyx
 
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -33,19 +33,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.presentation.font1
 import com.nyxhub.presentation.surfaceColor
-import com.termux.nyxhub.R
+import com.nyxhub.presentation.ui.LazyList
 import java.io.File
 import java.util.Locale
+
 const val key="path"
 class FileChooser : ComponentActivity() {
     private var dir: String by mutableStateOf(Environment.getExternalStorageDirectory().absolutePath)
@@ -56,14 +52,13 @@ class FileChooser : ComponentActivity() {
         super.onCreate(savedInstanceState)
         findTypes= intent.getStringArrayListExtra("filters") ?: arrayListOf()
         setContent {
-            fileChooser()
+            MainUi()
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    @OptIn(ExperimentalHorologistApi::class)
     @Composable
-    fun fileChooser() {
+    fun MainUi() {
         val listDir = remember(dir) { File(dir).listFiles()?.sorted()?.filter { it.isDirectory } }
         val listImage = remember(dir) {
             File(dir).listFiles()?.sorted()?.filter {
@@ -72,18 +67,12 @@ class FileChooser : ComponentActivity() {
                 it.extension.lowercase(Locale.ENGLISH) in findTypes
             }
         }
-        val state = rememberScalingLazyListState()
-        ScalingLazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            state = state,
-            modifier = Modifier
-                .rotaryWithScroll(state)
-        ) {
+        LazyList {
             item { Text(text = dir, fontFamily = font1, color = Color.White) }
             items(listDir ?: listOf()) {
                 Row(modifier = Modifier
-                    .fillParentMaxWidth()
                     .clickable { dir = it.absolutePath }
+                    .fillParentMaxWidth()
                     .background(surfaceColor, RoundedCornerShape(50))
                     .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -107,13 +96,13 @@ class FileChooser : ComponentActivity() {
                     }
                 }
                 Row(modifier = Modifier
-                    .fillParentMaxWidth()
-                    .background(surfaceColor, RoundedCornerShape(50))
-                    .padding(10.dp)
                     .clickable {
                         setResult(RESULT_OK, Intent().apply { putExtra(key, it.absolutePath) })
                         finish()
-                    },
+                    }
+                    .fillParentMaxWidth()
+                    .background(surfaceColor, RoundedCornerShape(50))
+                    .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) { if(imageBmp!=null)
@@ -136,8 +125,8 @@ class FileChooser : ComponentActivity() {
             }
             if (isNotRootDir()) item {
                 Row(modifier = Modifier
-                    .fillParentMaxWidth()
                     .clickable { goBackToPreviousDir() }
+                    .fillParentMaxWidth()
                     .background(surfaceColor, RoundedCornerShape(50))
                     .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -158,7 +147,7 @@ class FileChooser : ComponentActivity() {
         dir != Environment.getExternalStorageDirectory().absolutePath
 
     private fun goBackToPreviousDir() {
-        dir = File(dir).parent
+        dir = File(dir).parent!!
     }
 
     override fun onBackPressed() {
