@@ -9,14 +9,14 @@ class Properties(file_path: String) {
     init {
         if (file.exists()) {
             file.forEachLine { line ->
-                line.split(" ").let {
-                    map[it[0]] = it[1]
+                line.split(" : ").let { strings ->
+                    if (strings.size!=2) return@let
+                    map[strings[0]] = strings[1]
                 }
             }
         }
     }
     fun put(key: Any,value:Any)=map.put(key.toString(),value.toString())
-    fun getString(key: String,default: String=""): String = map[key]?:default
     fun forEach(action: (key: String, value: String) -> Unit) = map.forEach(action)
     fun getInt(key: String,default: Int): Int = if (map.containsKey(key)) map[key]!!.toInt() else default
     fun getBoolean(key: String,default: Boolean): Boolean = if (map.containsKey(key)) map[key]!!.toBoolean() else default

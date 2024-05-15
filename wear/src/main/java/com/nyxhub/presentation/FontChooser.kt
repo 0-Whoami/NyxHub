@@ -36,17 +36,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
-import com.nyxhub.file.FileChooser
-import com.nyxhub.file.key
+import com.nyxhub.nyx.FileChooser
+import com.nyxhub.nyx.key
 import com.nyxhub.presentation.ui.Button
+import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
 import com.termux.shared.termux.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
@@ -120,8 +118,7 @@ class FontChooser : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         setContent {
-            val state = rememberScalingLazyListState()
-            ScalingLazyColumn(state = state, modifier = Modifier.rotaryWithScroll(state)) {
+            LazyList {
                 item {
                     Text(text = "Font Chooser", fontFamily = font1, color = Color.White)
                 }
@@ -159,12 +156,12 @@ class FontChooser : ComponentActivity() {
     ) {
         var show by remember { mutableStateOf(false) }
         Column(modifier = Modifier
+            .clickable { show = !show }
             .fillMaxWidth()
             .background(
                 surfaceColor, RoundedCornerShape(if (show) 10 else 25)
             )
             .padding(15.dp)
-            .clickable { show = !show }
             .animateContentSize(),
             verticalArrangement = Arrangement.SpaceEvenly) {
             Row(
@@ -183,15 +180,15 @@ class FontChooser : ComponentActivity() {
                     contentDescription = null,
                     tint = surfaceColor,
                     modifier = Modifier
+                        .clickable {
+                            onIconClick()
+                            loadFonts()
+                        }
                         .size(45.dp)
                         .background(
                             Color.White, CircleShape
                         )
-                        .padding(5.dp)
-                        .clickable {
-                            onIconClick()
-                            loadFonts()
-                        })
+                        .padding(5.dp))
                 else Loading()
             }
             if (show) Text(

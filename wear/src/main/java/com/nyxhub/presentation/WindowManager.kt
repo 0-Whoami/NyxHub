@@ -13,10 +13,15 @@ import android.hardware.HardwareBuffer
 import android.media.ImageReader
 import android.os.Build
 import android.os.Bundle
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.ScriptIntrinsicBlur
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,7 +62,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -72,26 +76,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.scale
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
-import com.nyxhub.file.FileChooser
+import com.nyxhub.nyx.FileChooser
 import com.nyxhub.nyx.Properties
+import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
+import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
 import com.termux.shared.termux.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
+
 
 const val EXTRA_NORMAL_BACKGROUND: String = "$CONFIG_PATH/wallpaper.jpg"
 const val EXTRA_BLUR_BACKGROUND: String = "$CONFIG_PATH/wallpaperBlur.jpg"
@@ -108,6 +107,7 @@ class BackgroundManager : ComponentActivity() {
     private var font_size by mutableIntStateOf(14)
     private var density = 1f
     private val properties = Properties("$CONFIG_PATH/config")
+
     private fun loadValues() {
         font_size =properties.getInt("font_size", 14)
         enableBlur = properties.getBoolean("blur", true)
@@ -116,7 +116,6 @@ class BackgroundManager : ComponentActivity() {
 
 
     @SuppressLint("InvalidFragmentVersionForActivityResult")
-    @RequiresApi(Build.VERSION_CODES.S)
     private val result = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -126,7 +125,7 @@ class BackgroundManager : ComponentActivity() {
                 val bitmap = BitmapFactory.decodeFile(it.data?.getStringExtra("path"),
                     BitmapFactory.Options().apply { inMutable = true }).let { bitmap ->
                     val size = if (bitmap.width > bitmap.height) bitmap.height else bitmap.width
-                    Bitmap.createBitmap(bitmap, 0, 0, size, size).scale(450, 450)
+                    Bitmap.createBitmap(bitmap, 0, 0, size, size)
                 }
                 bitmap.save(EXTRA_NORMAL_BACKGROUND)
                 blurBitmap(bitmap, DetailedBlur * 100).save(EXTRA_BLUR_BACKGROUND)
@@ -173,28 +172,18 @@ class BackgroundManager : ComponentActivity() {
     }
 
 
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    @OptIn(ExperimentalHorologistApi::class)
     @Composable
     private fun Ui() {
-        val state = rememberScalingLazyListState()
-        ScalingLazyColumn(
-            state = state,
-            modifier = Modifier
-                .rotaryWithScroll(state)
-                .fillMaxSize()
-                .blur(if (popup || loading) 10.dp else 0.dp)
-        ) {
+        LazyList(blur = popup||loading) {
             item { Text(text = "Wallpaper", fontFamily = font1) }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
+                        .clickable { popup = true }
                         .clip(RoundedCornerShape(25))
                         .background(surfaceColor)
                         .fillMaxWidth()
-                        .height(75.dp)
-                        .clickable { popup = true }) {
+                        .height(75.dp)) {
 
                     if (wallpaper != null) Image(
                         modifier = Modifier.size(75.dp),
@@ -244,11 +233,6 @@ class BackgroundManager : ComponentActivity() {
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .padding(5.dp)
-                            .clip(RoundedCornerShape(25))
-                            .background(surfaceColor)
-                            .aspectRatio(1f)
-                            .weight(1f)
                             .clickable {
                                 if (DetailedBlur != level && wallpaper != null) {
                                     CoroutineScope(Dispatchers.IO).launch {
@@ -272,6 +256,11 @@ class BackgroundManager : ComponentActivity() {
 
                                 }
                             }
+                            .padding(5.dp)
+                            .clip(RoundedCornerShape(25))
+                            .background(surfaceColor)
+                            .aspectRatio(1f)
+                            .weight(1f)
                             .scrollable(orientation = Orientation.Vertical,
                                 reverseDirection = true,
                                 state = rememberScrollableState { delta ->
@@ -309,9 +298,6 @@ class BackgroundManager : ComponentActivity() {
                 Row(horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .background(surfaceColor, RoundedCornerShape(25))
-                        .fillMaxWidth()
-                        .padding(10.dp)
                         .clickable {
                             CoroutineScope(Dispatchers.IO).launch {
                                 loading = true
@@ -320,7 +306,10 @@ class BackgroundManager : ComponentActivity() {
                                 loadWallpapers()
                                 loading = false
                             }
-                        }) {
+                        }
+                        .background(surfaceColor, RoundedCornerShape(25))
+                        .fillMaxWidth()
+                        .padding(10.dp)) {
                     Icon(
                         imageVector = Icons.TwoTone.Delete,
                         contentDescription = null,
@@ -372,29 +361,32 @@ class BackgroundManager : ComponentActivity() {
                 }
             }
         }
-        if (popup) Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Button(icon = Icons.TwoTone.PhonelinkRing, text = "Phone") {
-                startActivity(Intent(
-                    this@BackgroundManager, DataChannel::class.java
-                ).apply {
-                    putStringArrayListExtra(
-                        "files", arrayListOf(EXTRA_NORMAL_BACKGROUND, EXTRA_BLUR_BACKGROUND)
-                    )
-                })
+        AnimatedVisibility(visible = popup) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(icon = Icons.TwoTone.PhonelinkRing, text = "Phone") {
+                    startActivity(Intent(
+                        this@BackgroundManager, DataChannel::class.java
+                    ).apply {
+                        putStringArrayListExtra(
+                            "files", arrayListOf(EXTRA_NORMAL_BACKGROUND, EXTRA_BLUR_BACKGROUND)
+                        )
+                    })
+                }
+                Button(icon = Icons.TwoTone.Storage, text = "Storage") {
+                    result.launch(Intent(this@BackgroundManager, FileChooser::class.java).apply {
+                        putStringArrayListExtra(
+                            "filters", arrayListOf("jpeg", "jpg", "png")
+                        )
+                    })
+                }
+                Button(icon = Icons.TwoTone.Cancel, text = "Cancel")
             }
-            Button(icon = Icons.TwoTone.Storage, text = "Storage") {
-                result.launch(Intent(this@BackgroundManager, FileChooser::class.java).apply {
-                    putStringArrayListExtra(
-                        "filters", arrayListOf("jpeg", "jpg", "png")
-                    )
-                })
-            }
-            Button(icon = Icons.TwoTone.Cancel, text = "Cancel")
         }
+         
         if (loading) Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Loading()
         }
@@ -417,13 +409,13 @@ class BackgroundManager : ComponentActivity() {
         Column(horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = modifier
+                .clickable { onClick() }
                 .padding(5.dp)
                 .clip(RoundedCornerShape(25))
                 .background(
                     color = if (enable) primary_color else surfaceColor,
                 )
-                .aspectRatio(1f)
-                .clickable { onClick() }) {
+                .aspectRatio(1f)) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
@@ -439,41 +431,56 @@ class BackgroundManager : ComponentActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun blurBitmap(bitmap: Bitmap, radius: Float = 15f): Bitmap {
-        val imageReader = ImageReader.newInstance(
-            bitmap.width,
-            bitmap.height,
-            PixelFormat.RGBA_8888,
-            1,
-            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT
-        )
-        val renderNode = RenderNode("BlurEffect")
-        val hardwareRenderer = HardwareRenderer()
+    private fun blurBitmap(bitmap: Bitmap, radius: Float = 15f): Bitmap {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            val imageReader = ImageReader.newInstance(
+                bitmap.width,
+                bitmap.height,
+                PixelFormat.RGBA_8888,
+                1,
+                HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or HardwareBuffer.USAGE_GPU_COLOR_OUTPUT
+            )
+            val renderNode = RenderNode("BlurEffect")
+            val hardwareRenderer = HardwareRenderer()
 
-        hardwareRenderer.setSurface(imageReader.surface)
-        hardwareRenderer.setContentRoot(renderNode)
-        renderNode.setPosition(0, 0, imageReader.width, imageReader.height)
-        val blurRenderEffect = RenderEffect.createBlurEffect(
-            radius, radius, Shader.TileMode.MIRROR
-        )
-        renderNode.setRenderEffect(blurRenderEffect)
-        val renderCanvas = renderNode.beginRecording()
-        renderCanvas.drawBitmap(bitmap, 0f, 0f, null)
-        renderNode.endRecording()
-        hardwareRenderer.createRenderRequest().setWaitForPresent(true).syncAndDraw()
-        val image = imageReader.acquireNextImage() ?: throw RuntimeException("No Image")
-        val hardwareBuffer = image.hardwareBuffer ?: throw RuntimeException("No HardwareBuffer")
-        val outBitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, null)
-            ?: throw RuntimeException("Create Bitmap Failed")
-        hardwareBuffer.close()
-        image.close()
-        imageReader.close()
-        renderNode.discardDisplayList()
-        hardwareRenderer.destroy()
-        return outBitmap
+            hardwareRenderer.setSurface(imageReader.surface)
+            hardwareRenderer.setContentRoot(renderNode)
+            renderNode.setPosition(0, 0, imageReader.width, imageReader.height)
+            val blurRenderEffect = RenderEffect.createBlurEffect(
+                radius, radius, Shader.TileMode.MIRROR
+            )
+            renderNode.setRenderEffect(blurRenderEffect)
+            val renderCanvas = renderNode.beginRecording()
+            renderCanvas.drawBitmap(bitmap, 0f, 0f, null)
+            renderNode.endRecording()
+            hardwareRenderer.createRenderRequest().setWaitForPresent(true).syncAndDraw()
+            val image = imageReader.acquireNextImage() ?: throw RuntimeException("No Image")
+            val hardwareBuffer = image.hardwareBuffer ?: throw RuntimeException("No HardwareBuffer")
+            val outBitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, null)
+                ?: throw RuntimeException("Create Bitmap Failed")
+            hardwareBuffer.close()
+            image.close()
+            imageReader.close()
+            renderNode.discardDisplayList()
+            hardwareRenderer.destroy()
+            return outBitmap
+        }else{
+            val rs: RenderScript? = RenderScript.create(this)
+            val outputBitmap: Bitmap =  Bitmap.createBitmap(
+                bitmap.width,
+                bitmap.height,
+                Bitmap.Config.ARGB_8888
+            )
+            val input = Allocation.createFromBitmap(rs, bitmap)
+            val output = Allocation.createTyped(rs, input.type)
+            val script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs))
+            script.setRadius(radius)
+            script.setInput(input)
+            script.forEach(output)
+            output.copyTo(outputBitmap)
+            return outputBitmap
+        }
     }
-
     private fun Bitmap.save(path: String) {
         this.compress(Bitmap.CompressFormat.JPEG, 100, FileOutputStream(path))
     }

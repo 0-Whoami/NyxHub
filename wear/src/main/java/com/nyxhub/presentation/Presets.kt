@@ -1,10 +1,7 @@
 package com.nyxhub.presentation
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -47,15 +42,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Text
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.presentation.ui.FailedScreen
+import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
 import com.termux.nyxhub.R
 import kotlinx.coroutines.CoroutineScope
@@ -71,16 +64,6 @@ class Presets : ComponentActivity() {
         val url: String,
         var icon: MutableState<ImageBitmap?> = mutableStateOf(null)
     )
-    private fun checkForInternet(context: Context): Boolean {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val networkCapabilities =
-            connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        return networkCapabilities != null &&
-                (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR))
-    }
     private val scope = CoroutineScope(Dispatchers.IO)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,7 +71,6 @@ class Presets : ComponentActivity() {
         val listOfGUIOptions = mutableListOf<RemoteFile>()
         var state: NetWorkResponse by mutableStateOf(NetWorkResponse.Loading)
         var state2: NetWorkResponse by mutableStateOf(NetWorkResponse.Loading)
-        println("internet: ${checkForInternet(this)}")
         setContent {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 var firstpage by remember { mutableStateOf(true) }
@@ -115,7 +97,7 @@ class Presets : ComponentActivity() {
                                             RemoteFile(
                                                 obj.getString(
                                                     "name"
-                                                ), obj.getString("url")
+                                                ), obj.getString("url").removeSuffix("?ref=main")
                                             )
                                         )
                                     }
@@ -176,8 +158,8 @@ class Presets : ComponentActivity() {
                             text = "CLI",
                             fontFamily = font1,
                             modifier = Modifier
-                                .weight(1f)
-                                .clickable { firstpage = true },
+                                .clickable { firstpage = true }
+                                .weight(1f),
                             color = primary_color,
                             textAlign = TextAlign.Center
                         )
@@ -185,8 +167,8 @@ class Presets : ComponentActivity() {
                             text = "GUI",
                             fontFamily = font1,
                             modifier = Modifier
-                                .weight(1f)
-                                .clickable { firstpage = false },
+                                .clickable { firstpage = false }
+                                .weight(1f),
                             color = primary_color,
                             textAlign = TextAlign.Center
                         )
@@ -198,12 +180,11 @@ class Presets : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalHorologistApi::class)
     @Composable
     fun Pages(
         state: NetWorkResponse,
         listOfNYXOptions: List<RemoteFile>,
-        scalingState: ScalingLazyListState
+        listState: ScalingLazyListState
     ) {
         when (state) {
             NetWorkResponse.Loading -> Loading()
@@ -211,13 +192,9 @@ class Presets : ComponentActivity() {
             NetWorkResponse.Failed -> FailedScreen()
 
             NetWorkResponse.Success -> {
-                ScalingLazyColumn(
-                    anchorType = ScalingLazyListAnchorType.ItemStart,
-                    state = scalingState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .rotaryWithScroll(scalingState),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                LazyList(
+                    state = listState,
+                    anchorType = ScalingLazyListAnchorType.ItemStart
                 ) { item { Text("Flavours") }
                     items(listOfNYXOptions) {
                         Catalogue(it = it)
@@ -232,11 +209,11 @@ class Presets : ComponentActivity() {
     fun Catalogue(it: RemoteFile) {
         Row(
             modifier = Modifier
+                .clickable { startActivity(Intent(this@Presets, PresetViewer::class.java).putExtra("url",it.url))}
                 .clip(RoundedCornerShape(25))
                 .background(surfaceColor)
                 .fillMaxWidth()
-                .height(75.dp)
-                .clickable { startActivity(Intent(this@Presets, PresetViewer::class.java).putExtra("url",it.url))},
+                .height(75.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
