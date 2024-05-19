@@ -54,16 +54,16 @@ import com.nyxhub.nyx.Properties
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
 import com.nyxhub.presentation.ui.LazyList
-import com.termux.shared.termux.NyxConstants.CONFIG_PATH
+import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 val surfaceColor = Color(0xff18181c)
-
+const val COLOR_FILE_NAME="colors"
 class ColorChanger : ComponentActivity() {
     private var blur by mutableStateOf(false)
-    private val properties = Properties("$CONFIG_PATH/colors")
+    private val properties = Properties("$CONFIG_PATH/$COLOR_FILE_NAME")
     private val DEFAULT_COLORSCHEME = listOf(
         // 16 original colors. First 8 are dim. // black
         -0x1000000,  // dim red
@@ -329,7 +329,7 @@ class ColorChanger : ComponentActivity() {
         -0x1000000//Color_SECENDARY_UI
     )
 
-    @OptIn(ExperimentalStdlibApi::class, ExperimentalHorologistApi::class)
+    @OptIn(ExperimentalStdlibApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         CoroutineScope(Dispatchers.IO).launch { loadColors() }

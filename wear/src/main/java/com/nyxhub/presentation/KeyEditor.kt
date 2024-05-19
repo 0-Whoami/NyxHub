@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -47,11 +46,11 @@ import com.nyxhub.nyx.Properties
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
 import com.nyxhub.presentation.ui.LazyList
-import com.termux.shared.termux.NyxConstants.CONFIG_PATH
-
+import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
+const val KEYS_FILE_NAME="keys"
 class KeyEditor : ComponentActivity() {
     private var blur by mutableStateOf(false)
-    private val properties = Properties("$CONFIG_PATH/keys")
+    private val properties = Properties("$CONFIG_PATH/$KEYS_FILE_NAME")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadKeys()
@@ -108,12 +107,11 @@ class KeyEditor : ComponentActivity() {
                                 labelText = ""
                                 blur = true
                             }
-                            .padding(5.dp)
                             .background(
                                 primary_color, RoundedCornerShape(50)
                             )
-                            .padding(5.dp)
-                            .size(50.dp, 25.dp))
+                            .padding(10.dp)
+                            .fillMaxWidth(if(changedMap.size==0) 1f else 0.5f))
                 }
             }
 

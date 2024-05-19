@@ -47,11 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeTextDefaults
-import com.nyxhub.file.FileUtils
+import com.nyxhub.nyx.NyxConstants
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.LazyList
 import com.termux.nyxhub.R
-import com.termux.shared.termux.NyxConstants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -65,11 +64,12 @@ fun startActivity(context: Context, cls: Class<*>) {
     context.startActivity(Intent(context, cls))
 }
 
-fun startNyx(context: Context) {
+fun startNyx(context: Context, cmd: String?=null) {
     context.startActivity(Intent().apply {
         setComponent(
-            ComponentName("com.termux", "com.termux.app.main")
+            ComponentName("com.termux", "com.termux.NyxActivity")
         )
+        if (!cmd.isNullOrBlank()) putExtra("cmd", cmd)
     })
 }
 
@@ -117,59 +117,17 @@ half4 main( float2 fragCoord )
 }
 """
 
-@Language("AGSL")
-private const val SHADER1 = """
-    
-float NUM_LAYERS =10.0;
-int ITER =23;
-uniform float2 size;
-uniform float time;
-
-float4 tex(float3 p)
-{
-    float t = time+78.;
-    float4 o = float4(p.xyz,3.*sin(t*.1));
-    float4 dec = float4 (1.,.9,.1,.15) + float4(.06*cos(t*.1),0,0,.14*cos(t*.23));
-    for (int i=0 ; i < 15;i++) o.xzyw = abs(o/dot(o,o)- dec);
-    return o;
-}
-
-half4 main( float2 fragCoord )
-{
-
-    float2 uv = (fragCoord-size.xy*.5)/size.y;
-    float3 col = float3(0);   
-    float t= time* .3;
-    
-	for(float i=0.; i<=1.; i+=1./10.0)
-    {
-        float d = fract(i+t); // depth
-        float s = mix(5.,.5,d); // scale
-        float f = d * smoothstep(1.,.9,d); //fade
-        col+= tex(float3(uv*s,i*4.)).xyz*f;
-    }
-    
-    col/=10;
-    col*=float3(2,1.,2.);
-   	col=pow(col,float3(.5 ));  
-
-    return half4(col,1.0);
-}
-"""
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(android.R.style.Theme_DeviceDefault)
         CoroutineScope(Dispatchers.IO).launch {
-            FileUtils.isTermuxFilesDirectoryAccessible(
-                createDirectoryIfMissing = true, setMissingPermissions = true
-            )
-            FileUtils.isAppsTermuxAppDirectoryAccessible(
-                true, setMissingPermissions = true
-            )
+            validateDir(NyxConstants.TERMUX_FILES_DIR_PATH)
+            validateDir(NyxConstants.TERMUX_APPS_DIR_PATH)
+            validateDir(NyxConstants.TERMUX_HOME_DIR_PATH)
             setupStorageSymlinks(this@MainActivity)
             if (!File(NyxConstants.CONFIG_PATH).exists()) File(NyxConstants.CONFIG_PATH).mkdirs()
+            cacheDir.deleteRecursively()
         }
         setContent {
             Page_1()
@@ -294,6 +252,7 @@ class MainActivity : ComponentActivity() {
     }
 
 }
+
 fun setupStorageSymlinks(context: Context) {
     try {
         val storageDir = NyxConstants.TERMUX_STORAGE_HOME_DIR
@@ -325,13 +284,11 @@ fun setupStorageSymlinks(context: Context) {
         Os.symlink(
             picturesDir.absolutePath, File(storageDir, "pictures").absolutePath
         )
-        val musicDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
+        val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
         Os.symlink(
             musicDir.absolutePath, File(storageDir, "music").absolutePath
         )
-        val moviesDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+        val moviesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
         Os.symlink(
             moviesDir.absolutePath, File(storageDir, "movies").absolutePath
         )

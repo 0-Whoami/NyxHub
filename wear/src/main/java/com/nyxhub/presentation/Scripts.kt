@@ -1,6 +1,5 @@
 package com.nyxhub.presentation
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -73,12 +72,7 @@ class Scripts : ComponentActivity() {
                             })
                     }) {
                         Button(icon = Icons.TwoTone.Description, text = it.name) {
-                            startActivity(Intent().apply {
-                                setComponent(
-                                    ComponentName("com.termux", "com.termux.app.main")
-                                )
-                                putExtra("cmd", "bash ${it.absolutePath}")
-                            })
+                            startNyx(this@Scripts,"bash ${it.absolutePath}\n")
                         }
                     }
 

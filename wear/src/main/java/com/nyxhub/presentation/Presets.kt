@@ -6,14 +6,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,6 +63,7 @@ class Presets : ComponentActivity() {
         val url: String,
         var icon: MutableState<ImageBitmap?> = mutableStateOf(null)
     )
+
     private val scope = CoroutineScope(Dispatchers.IO)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,7 +88,7 @@ class Presets : ComponentActivity() {
                     if (firstpage) {
                         if (listOfNYXOptions.isEmpty()) {
                             scope.launch {
-                                state=getData(
+                                state = getData(
                                     "$apiUrl/flavours/Nyx"
                                 ) {
                                     for (i in 0..<it.length()) {
@@ -109,7 +108,7 @@ class Presets : ComponentActivity() {
                     } else {
                         if (listOfGUIOptions.isEmpty()) {
                             scope.launch {
-                                state2=getData(
+                                state2 = getData(
                                     "$apiUrl/flavours/GUI"
                                 ) {
                                     for (i in 0..<it.length()) {
@@ -130,18 +129,19 @@ class Presets : ComponentActivity() {
 
                 AnimatedVisibility(enter = slideInVertically { it },
                     exit = slideOutVertically { it },
-                    visible = !scalingState.isScrollInProgress && (if (firstpage)state else state2) != NetWorkResponse.Loading,
+                    visible = !scalingState.isScrollInProgress && (if (firstpage) state else state2) != NetWorkResponse.Loading,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .offset(y = (-10).dp)) {
+                        .offset(y = (-10).dp)
+                ) {
                     val animator = (1 - 0.2f * sin(3.14f * animation))
                     Row(verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .fillMaxWidth(0.5f)
+                            .size(100.dp, 35.dp)
                             .background(
                                 surfaceColor, RoundedCornerShape(50)
                             )
-                            .padding(5.dp)
+                            .padding(3.dp)
                             .drawWithContent {
                                 drawContent()
                                 drawRoundRect(
@@ -153,26 +153,25 @@ class Presets : ComponentActivity() {
                                         size.width / 2 * animation, size.height * (1 - animator) / 2
                                     )
                                 )
-                            }
-                            .padding(5.dp)) {
-                        Text(
-                            text = "CLI",
+                            }) {
+                        Text(text = "CLI",
                             fontFamily = font1,
                             modifier = Modifier
-                                .clickable { firstpage = true }
+                                .clickable(
+                                    indication = null, interactionSource = null
+                                ) { firstpage = true }
                                 .weight(1f),
                             color = primary_color,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "GUI",
+                            textAlign = TextAlign.Center)
+                        Text(text = "GUI",
                             fontFamily = font1,
                             modifier = Modifier
-                                .clickable { firstpage = false }
+                                .clickable(
+                                    indication = null, interactionSource = null
+                                ) { firstpage = false }
                                 .weight(1f),
                             color = primary_color,
-                            textAlign = TextAlign.Center
-                        )
+                            textAlign = TextAlign.Center)
                     }
                 }
 
@@ -183,9 +182,7 @@ class Presets : ComponentActivity() {
 
     @Composable
     fun Pages(
-        state: NetWorkResponse,
-        listOfNYXOptions: List<RemoteFile>,
-        listState: ScalingLazyListState
+        state: NetWorkResponse, listOfNYXOptions: List<RemoteFile>, listState: ScalingLazyListState
     ) {
         when (state) {
             NetWorkResponse.Loading -> Loading()
@@ -194,13 +191,12 @@ class Presets : ComponentActivity() {
 
             NetWorkResponse.Success -> {
                 LazyList(
-                    state = listState,
-                    anchorType = ScalingLazyListAnchorType.ItemStart
-                ) { item { Text("Flavours") }
+                    state = listState, anchorType = ScalingLazyListAnchorType.ItemStart
+                ) {
+                    item { Text("Flavours") }
                     items(listOfNYXOptions) {
                         Catalogue(it = it)
                     }
-                    item {  }
                 }
             }
         }
@@ -208,16 +204,19 @@ class Presets : ComponentActivity() {
 
     @Composable
     fun Catalogue(it: RemoteFile) {
-        Row(
-            modifier = Modifier
-                .clickable { startActivity(Intent(this@Presets, PresetViewer::class.java).putExtra("url",it.url))}
-                .clip(RoundedCornerShape(25))
-                .background(surfaceColor)
-                .fillMaxWidth()
-                .height(75.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        Row(modifier = Modifier
+            .clickable {
+                startActivity(
+                    Intent(
+                        this@Presets, PresetViewer::class.java
+                    ).putExtra("url", it.url)
+                )
+            }
+            .clip(RoundedCornerShape(25))
+            .background(surfaceColor)
+            .fillMaxWidth()
+            .height(75.dp),
+            verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(75.dp), contentAlignment = Alignment.Center
             ) {
@@ -230,12 +229,14 @@ class Presets : ComponentActivity() {
                 )
             }
             Text(
-                text = it.name, fontFamily = font1
+                text = it.name,
+                fontFamily = font1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
         }
         LaunchedEffect(Unit) {
-            if (it.icon.value==null)
-            scope.launch {
+            if (it.icon.value == null) scope.launch {
                 val failure: () -> Unit = {
                     it.icon.value = ImageBitmap.imageResource(resources, R.drawable.network_error)
                 }

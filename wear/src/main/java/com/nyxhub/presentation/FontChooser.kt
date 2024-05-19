@@ -40,13 +40,12 @@ import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.nyxhub.nyx.FileChooser
 import com.nyxhub.nyx.key
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
-import com.termux.shared.termux.NyxConstants.CONFIG_PATH
+import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,9 +59,10 @@ class FontData(
     var path: String,
     var typeface: MutableState<FontFamily?> = mutableStateOf(null)
 )
-
+const val FONT_FILE_NAME="font.ttf"
+const val ITALIC_FONT_FILE_NAME="italic_$FONT_FILE_NAME"
 class FontChooser : ComponentActivity() {
-    val file = File("$CONFIG_PATH/font.ttf")
+    val file = File("$CONFIG_PATH/$FONT_FILE_NAME")
     private var currentFont: MutableState<FontFamily?> =
         mutableStateOf(FontFamily(Typeface.MONOSPACE))
     private val customFonts = mutableStateListOf<FontData>()
@@ -97,7 +97,6 @@ class FontChooser : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalHorologistApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         cacheDir.deleteRecursively()
         loadFonts()

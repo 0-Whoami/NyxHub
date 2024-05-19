@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.termux.nyxhub"
-        minSdk = 30
+        minSdk = 28
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

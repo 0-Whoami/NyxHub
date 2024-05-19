@@ -1,7 +1,5 @@
 package com.nyxhub.presentation.ui
 
-import android.graphics.RuntimeShader
-import android.os.Build
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -16,78 +14,49 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
 import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.foundation.lazy.ScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Text
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
-import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 import com.nyxhub.presentation.font1
 import com.nyxhub.presentation.primary_color
 import com.nyxhub.presentation.surfaceColor
 import com.termux.nyxhub.R
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.intellij.lang.annotations.Language
 
 
-@Language("AGSL")
-private const val SHADER = """
-uniform float2 size;
-uniform float time;
-float s(float a,float2 p) {
-    return 1.0/length(p+float2(sin(a), cos(a)));
-}
-
-half4 main( float2 fragCord ){
-    float2 p = (fragCord-size/2.0)/size.y*4.0;
-    
-    float d=s(time,p);
-    
-    for (float i=0;i<6.0;i+=1.256) 
-    {
-        d+=s(i-time,p);
-    }
-    
-    d = d*0.75-6.0;
-    
-    return half4(d);
-}
-"""
-
-@OptIn(ExperimentalHorologistApi::class)
+@OptIn(ExperimentalWearFoundationApi::class)
 @Composable
 fun LazyList(
     modifier: Modifier = Modifier,
@@ -101,7 +70,9 @@ fun LazyList(
         modifier = modifier
             .blur(if (blur) 15.dp else 0.dp)
             .fillMaxSize()
-            .rotaryWithScroll(state),
+            .rotaryScrollable(RotaryScrollableDefaults.behavior(state),
+                rememberActiveFocusRequester()
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         state = state,
         anchorType = anchorType,
@@ -112,27 +83,69 @@ fun LazyList(
 }
 
 @Composable
-fun Loading() {
-
-        val alpha by rememberInfiniteTransition(label = "").animateFloat(
-            initialValue = 1f, targetValue = 0.1f, animationSpec = infiniteRepeatable(
-                animation = tween(
-                    durationMillis = 1000, delayMillis = 500
-                ), repeatMode = RepeatMode.Reverse
-            ), label = ""
+fun CardWithCaption(
+    modifier: Modifier=Modifier,
+    height:Int=45,
+    icon1: ImageVector,
+    text: String,
+    subText: String,
+    icon2: ImageVector? = null,
+    icon2action: () -> Unit = {},
+    click: () -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        modifier = Modifier
+            .clickable(indication = null, interactionSource = null) { click() }
+            .fillMaxWidth()
+            .height(height.dp)
+            .then(modifier)) {
+        Icon(
+            imageVector = icon1, contentDescription = null, modifier = Modifier.weight(1f)
         )
-        Canvas(
-            modifier = Modifier
-                .padding(10.dp)
-                .size(30.dp)
-        ) {
-            drawCircle(
-                color = primary_color,
-                alpha = alpha,
-                style = Stroke(width = 5f),
-                radius = size.minDimension / 2 * (1 - alpha)
+        Column(modifier = Modifier.weight(2f)) {
+            Text(
+                text = text, fontFamily = font1, style = MaterialTheme.typography.body2
+            )
+            Text(
+                text = subText, fontFamily = font1, fontSize = 8.sp
             )
         }
+        if (icon2 != null) Icon(
+            imageVector = icon2,
+            contentDescription = null,
+            modifier = Modifier
+                .clickable { icon2action() }
+                .weight(1f)
+                .clip(
+                    CircleShape
+                )
+        )
+    }
+}
+
+@Composable
+fun Loading() {
+
+    val alpha by rememberInfiniteTransition(label = "").animateFloat(
+        initialValue = 1f, targetValue = 0.1f, animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 1000, delayMillis = 500
+            ), repeatMode = RepeatMode.Reverse
+        ), label = ""
+    )
+    Canvas(
+        modifier = Modifier
+            .padding(10.dp)
+            .size(30.dp)
+    ) {
+        drawCircle(
+            color = primary_color,
+            alpha = alpha,
+            style = Stroke(width = 5f),
+            radius = size.minDimension / 2 * (1 - alpha)
+        )
+    }
 
 }
 
@@ -148,14 +161,21 @@ fun AnimatedVisibility(
 }
 
 @Composable
-fun Button(modifier: Modifier? = null, icon: ImageVector, color: Color= primary_color, text: String, click: () -> Unit) {
+fun Button(
+    modifier: Modifier? = null,
+    icon: ImageVector,
+    color: Color = primary_color,
+    background:Color= surfaceColor,
+    text: String,
+    click: () -> Unit
+) {
     Row(modifier = Modifier
         .clickable(indication = null, interactionSource = null) { click() }
         .then(
             modifier ?: Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(25))
-                .background(surfaceColor)
+                .background(background)
                 .padding(15.dp)
         ),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
