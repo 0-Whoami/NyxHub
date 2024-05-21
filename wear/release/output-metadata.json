@@ -8,12 +8,30 @@
   "variantName": "release",
   "elements": [
     {
-      "type": "SINGLE",
-      "filters": [],
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "armeabi-v7a"
+        }
+      ],
       "attributes": [],
       "versionCode": 1,
       "versionName": "1.0",
-      "outputFile": "wear-release.apk"
+      "outputFile": "wear-armeabi-v7a-release.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86_64"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 1,
+      "versionName": "1.0",
+      "outputFile": "wear-x86_64-release.apk"
     }
   ],
   "elementType": "File",
@@ -22,16 +40,18 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/wear-release.dm"
+        "baselineProfiles/1/wear-armeabi-v7a-release.dm",
+        "baselineProfiles/1/wear-x86_64-release.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/wear-release.dm"
+        "baselineProfiles/0/wear-armeabi-v7a-release.dm",
+        "baselineProfiles/0/wear-x86_64-release.dm"
       ]
     }
   ],
-  "minSdkVersionForDexing": 30
+  "minSdkVersionForDexing": 28
 }

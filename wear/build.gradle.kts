@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
 }
-tasks{
+tasks {
     withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs += listOf("-Xskip-prerelease-check")
@@ -25,15 +25,22 @@ android {
             useSupportLibrary = true
         }
     }
+    splits {
+        abi {
+            isEnable=true
+            reset()
+            include ("x86_64", "armeabi-v7a")
+            isUniversalApk = false
+        }
+    }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            isCrunchPngs=true
+            isCrunchPngs = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }
