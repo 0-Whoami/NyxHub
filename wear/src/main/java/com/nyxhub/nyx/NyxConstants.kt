@@ -86,5 +86,5 @@ object NyxConstants {
     const val TERMUX_APPS_DIR_PATH: String = "$TERMUX_FILES_DIR_PATH/apps"
 
 
-    const val CONFIG_PATH: String = "$TERMUX_FILES_DIR_PATH/.nyx"
+    const val CONFIG_PATH: String = "$TERMUX_FILES_DIR_PATH/.termux"
 }

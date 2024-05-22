@@ -60,7 +60,6 @@ class FontData(
     var typeface: MutableState<FontFamily?> = mutableStateOf(null)
 )
 const val FONT_FILE_NAME="font.ttf"
-const val ITALIC_FONT_FILE_NAME="italic_$FONT_FILE_NAME"
 class FontChooser : ComponentActivity() {
     val file = File("$CONFIG_PATH/$FONT_FILE_NAME")
     private var currentFont: MutableState<FontFamily?> =

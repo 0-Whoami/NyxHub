@@ -3,7 +3,6 @@ package com.nyxhub.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,18 +48,18 @@ import androidx.core.graphics.toColorInt
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
-import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
 import com.nyxhub.nyx.Properties
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
 import com.nyxhub.presentation.ui.LazyList
-import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 val surfaceColor = Color(0xff18181c)
-const val COLOR_FILE_NAME="colors"
+const val COLOR_FILE_NAME = "colors"
+
 class ColorChanger : ComponentActivity() {
     private var blur by mutableStateOf(false)
     private val properties = Properties("$CONFIG_PATH/$COLOR_FILE_NAME")
@@ -324,9 +323,7 @@ class ColorChanger : ComponentActivity() {
         -0x111112,
         -0x1,// COLOR_INDEX_DEFAULT_FOREGROUND, and :
         -0x1000000,//COLOR_INDEX_DEFAULT_BACKGROUND
-        -0x1,//COLOR_INDEX_DEFAULT_CURSOR
-        -0x1,//COLOR_PRIMARY_UI
-        -0x1000000//Color_SECENDARY_UI
+        -0x1//COLOR_INDEX_DEFAULT_CURSOR
     )
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -334,6 +331,11 @@ class ColorChanger : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CoroutineScope(Dispatchers.IO).launch { loadColors() }
         setTheme(android.R.style.Theme_DeviceDefault)
+        val msg="The first 256 colors are indexed according to xterm-256.\n" +
+                "Note:\n" +
+                "- Color 256: Foreground color\n" +
+                "- Color 257: Background color\n" +
+                "- Color 258: Cursor color\n"
         setContent {
             rememberScalingLazyListState()
             var index by remember { mutableIntStateOf(0) }
@@ -345,28 +347,13 @@ class ColorChanger : ComponentActivity() {
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.animateContentSize()
                     ) {
-                        val annotatedString = remember {
-                            buildAnnotatedString {
-                                append("First 256 colors are indexed according to ")
-
-                                pushStringAnnotation(
-                                    tag = "info",
-                                    annotation = "https://www.ditig.com/publications/256-colors-cheat-sheet"
-                                )
-                                withStyle(style = SpanStyle(color = Color(0xff8692FC))) {
-                                    append("xterm-256")
-                                }
-                                append("\n Note :\nColor 256 : Foreground Color\nColor257 : Background color\nColor258 : Cursor color\nColor259 : Primary Ui color\nColor260: Secondary Ui Color")
-                                pop()
-                            }
-                        }
                         var help by remember {
                             mutableStateOf(false)
                         }
 
                         if (help) {
                             Text(
-                                text = annotatedString,
+                                text = msg,
                                 textAlign = TextAlign.Center,
                                 color = Color.White,
                                 fontFamily = font1
@@ -404,7 +391,12 @@ class ColorChanger : ComponentActivity() {
                                 .background(color = Color(colors[it]))
                         )
                         Text(
-                            text = "Color $it",
+                            text = when (it) {
+                                256 -> "Foreground Color"
+                                257 -> "Background Color"
+                                258 -> "Cursor Color"
+                                else -> "Color $it"
+                            },
                             color = Color(0xffFEF9EF),
                             fontFamily = font1,
                             modifier = Modifier.padding(10.dp)
