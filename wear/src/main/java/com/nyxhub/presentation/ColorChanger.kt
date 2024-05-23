@@ -354,7 +354,6 @@ class ColorChanger : ComponentActivity() {
                         if (help) {
                             Text(
                                 text = msg,
-                                textAlign = TextAlign.Center,
                                 color = Color.White,
                                 fontFamily = font1
                             )

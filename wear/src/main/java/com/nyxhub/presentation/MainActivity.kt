@@ -8,6 +8,10 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.system.Os
+import android.text.InputType
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.widget.EditText
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -32,7 +36,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +47,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeTextDefaults
@@ -53,7 +57,6 @@ import com.nyxhub.presentation.ui.LazyList
 import com.termux.nyxhub.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.intellij.lang.annotations.Language
 import java.io.File
@@ -64,7 +67,7 @@ fun startActivity(context: Context, cls: Class<*>) {
     context.startActivity(Intent(context, cls))
 }
 
-fun startNyx(context: Context, cmd: String?=null) {
+fun startNyx(context: Context, cmd: String? = null) {
     context.startActivity(Intent().apply {
         setComponent(
             ComponentName("com.termux", "com.termux.NyxActivity")
@@ -139,7 +142,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun Page_1() {
         var time by remember { mutableFloatStateOf(0f) }
-        val scope = rememberCoroutineScope()
 
         LazyList {
             item {
@@ -244,10 +246,9 @@ class MainActivity : ComponentActivity() {
         }
 
         LaunchedEffect(key1 = time) {
-            scope.launch {
-                time += 0.01f
-                delay(10000)
-            }
+
+            time += 0.01f
+
         }
     }
 

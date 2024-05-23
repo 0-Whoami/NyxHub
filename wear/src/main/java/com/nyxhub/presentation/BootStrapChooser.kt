@@ -176,9 +176,7 @@ class BootStrapChooser : ComponentActivity() {
 
                         }
                         LaunchedEffect(key1 = time) {
-                            scope.launch {
-                                time += 0.001f
-                            }
+                            time += 0.001f
                         }
                         if (moreOptions) {
                             CardWithCaption(
@@ -219,7 +217,7 @@ class BootStrapChooser : ComponentActivity() {
                     ) {
                         if (!expand) expand = true
                         else {
-                            scope.launch { setupBootstrap();finish() }
+                            scope.launch { loading = true;setupBootstrap();finish() }
                         }
                     }
                 }
@@ -241,8 +239,13 @@ class BootStrapChooser : ComponentActivity() {
                 }
             }
             AnimatedVisibility(visible = loading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Loading()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(indication = null, interactionSource = null) {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    Loading(window)
                 }
             }
         }
@@ -278,7 +281,6 @@ class BootStrapChooser : ComponentActivity() {
     }
 
     private fun setupBootstrap(input: InputStream = URL(determineZipUrl()).openStream()) {
-        loading = true
         // Delete prefix staging directory or any file at its destination
         require(NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH.deleteRecursively()) {
             "Can't delete staging ${NyxConstants.TERMUX_STAGING_PREFIX_DIR_PATH}"
@@ -362,7 +364,6 @@ class BootStrapChooser : ComponentActivity() {
             "Moving termux prefix staging to prefix directory failed"
         }
         applyPatch(this)
-        loading = false
     }
 }
 
@@ -376,7 +377,7 @@ fun validateDir(filepath: String): Boolean {
 
 fun applyPatch(context: Context) = getData("$apiUrl/patch") { jsonArray ->
     environmentVariable()
-    phraseJsonArray(context, jsonArray){}
+    phraseJsonArray(context, jsonArray) {}
 }
 
 const val ENV_FILE = "${NyxConstants.TERMUX_PREFIX_DIR_PATH}/etc/environment.sh"

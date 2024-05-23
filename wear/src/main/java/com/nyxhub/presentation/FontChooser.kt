@@ -151,7 +151,7 @@ class FontChooser : ComponentActivity() {
             file.delete()
             File(it.path).copyTo(file)
         }
-    ) {
+    ) {val window=remember{this.window}
         var show by remember { mutableStateOf(false) }
         Column(modifier = Modifier
             .clickable { show = !show }

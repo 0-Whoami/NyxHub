@@ -1,5 +1,7 @@
 package com.nyxhub.presentation.ui
 
+import android.view.Window
+import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,8 +73,8 @@ fun LazyList(
         modifier = modifier
             .blur(if (blur) 15.dp else 0.dp)
             .fillMaxSize()
-            .rotaryScrollable(RotaryScrollableDefaults.behavior(state),
-                rememberActiveFocusRequester()
+            .rotaryScrollable(
+                RotaryScrollableDefaults.behavior(state), rememberActiveFocusRequester()
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
         state = state,
@@ -84,8 +87,8 @@ fun LazyList(
 
 @Composable
 fun CardWithCaption(
-    modifier: Modifier=Modifier,
-    height:Int=45,
+    modifier: Modifier = Modifier,
+    height: Int = 45,
     icon1: ImageVector,
     text: String,
     subText: String,
@@ -111,22 +114,19 @@ fun CardWithCaption(
                 text = subText, fontFamily = font1, fontSize = 8.sp
             )
         }
-        if (icon2 != null) Icon(
-            imageVector = icon2,
+        if (icon2 != null) Icon(imageVector = icon2,
             contentDescription = null,
             modifier = Modifier
                 .clickable { icon2action() }
                 .weight(1f)
                 .clip(
                     CircleShape
-                )
-        )
+                ))
     }
 }
 
 @Composable
-fun Loading() {
-
+fun Loading(window: Window? = null) {
     val alpha by rememberInfiniteTransition(label = "").animateFloat(
         initialValue = 1f, targetValue = 0.1f, animationSpec = infiniteRepeatable(
             animation = tween(
@@ -146,7 +146,12 @@ fun Loading() {
             radius = size.minDimension / 2 * (1 - alpha)
         )
     }
-
+    if (window != null) DisposableEffect(Unit) {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
 }
 
 @Composable
@@ -165,7 +170,7 @@ fun Button(
     modifier: Modifier? = null,
     icon: ImageVector,
     color: Color = primary_color,
-    background:Color= surfaceColor,
+    background: Color = surfaceColor,
     text: String,
     click: () -> Unit
 ) {
