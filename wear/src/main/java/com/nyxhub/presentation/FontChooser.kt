@@ -41,11 +41,11 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.nyxhub.nyx.FileChooser
+import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
 import com.nyxhub.nyx.key
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
-import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -59,11 +59,13 @@ class FontData(
     var path: String,
     var typeface: MutableState<FontFamily?> = mutableStateOf(null)
 )
-const val FONT_FILE_NAME="font.ttf"
+
+const val FONT_FILE_NAME = "font.ttf"
+
 class FontChooser : ComponentActivity() {
     val file = File("$CONFIG_PATH/$FONT_FILE_NAME")
-    private var currentFont: MutableState<FontFamily?> =
-        mutableStateOf(FontFamily(Typeface.MONOSPACE))
+    private val default = FontFamily(Typeface.MONOSPACE)
+    private var currentFont: MutableState<FontFamily?> = mutableStateOf(default)
     private val customFonts = mutableStateListOf<FontData>()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -121,7 +123,10 @@ class FontChooser : ComponentActivity() {
                     Text(text = "Font Chooser", fontFamily = font1, color = Color.White)
                 }
                 item {
-                    FontPreview(it = FontData("Current", "", currentFont), Icons.TwoTone.Delete) {
+                    FontPreview(
+                        it = FontData("Current", "", currentFont),
+                        if (currentFont != default) Icons.TwoTone.Delete else null
+                    ) {
                         file.delete()
                     }
                 }
@@ -145,13 +150,15 @@ class FontChooser : ComponentActivity() {
         }
 
     }
+
     @Composable
     fun FontPreview(
-        it: FontData, icon: ImageVector = Icons.TwoTone.Download, onIconClick: () -> Unit = {
+        it: FontData, icon: ImageVector? = Icons.TwoTone.Download, onIconClick: () -> Unit = {
             file.delete()
             File(it.path).copyTo(file)
         }
-    ) {val window=remember{this.window}
+    ) {
+        remember { this.window }
         var show by remember { mutableStateOf(false) }
         Column(modifier = Modifier
             .clickable { show = !show }
@@ -160,8 +167,7 @@ class FontChooser : ComponentActivity() {
                 surfaceColor, RoundedCornerShape(if (show) 10 else 25)
             )
             .padding(15.dp)
-            .animateContentSize(),
-            verticalArrangement = Arrangement.SpaceEvenly) {
+            .animateContentSize(), verticalArrangement = Arrangement.SpaceEvenly) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -174,20 +180,22 @@ class FontChooser : ComponentActivity() {
                     color = Color.White,
                     style = MaterialTheme.typography.title2
                 )
-                if (it.typeface.value != null) Icon(imageVector = icon,
-                    contentDescription = null,
-                    tint = surfaceColor,
-                    modifier = Modifier
-                        .clickable {
-                            onIconClick()
-                            loadFonts()
-                        }
-                        .size(45.dp)
-                        .background(
-                            Color.White, CircleShape
-                        )
-                        .padding(5.dp))
-                else Loading()
+                if (icon != null) {
+                    if (it.typeface.value != null) Icon(imageVector = icon,
+                        contentDescription = null,
+                        tint = surfaceColor,
+                        modifier = Modifier
+                            .clickable {
+                                onIconClick()
+                                loadFonts()
+                            }
+                            .size(45.dp)
+                            .background(
+                                Color.White, CircleShape
+                            )
+                            .padding(5.dp))
+                    else Loading()
+                }
             }
             if (show) Text(
                 text = demo,

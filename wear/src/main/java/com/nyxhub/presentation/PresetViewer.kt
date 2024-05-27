@@ -20,6 +20,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.twotone.Download
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,7 @@ import com.nyxhub.presentation.ui.Loading
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -68,6 +70,7 @@ class PresetViewer : ComponentActivity() {
     private lateinit var urlOfFlavour: String
     private var loading by mutableStateOf(false)
     private val scope = CoroutineScope(Dispatchers.IO)
+    private var success by mutableStateOf(false)
 
     @SuppressLint("InvalidFragmentVersionForActivityResult")
     private val result = registerForActivityResult(
@@ -80,6 +83,7 @@ class PresetViewer : ComponentActivity() {
                     phraseJsonArray(this@PresetViewer, jsonArray) {}
                 }
                 loading = false
+                success = true
             }
 
         }
@@ -153,7 +157,7 @@ class PresetViewer : ComponentActivity() {
                 }
             }
             LazyList(
-                blur = loading, contentPadding = PaddingValues(0.dp)
+                blur = loading || success, contentPadding = PaddingValues(0.dp)
             ) {
                 item { Text(text = "Preview", fontFamily = font1) }
                 item {
@@ -238,6 +242,22 @@ class PresetViewer : ComponentActivity() {
             AnimatedVisibility(visible = loading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Loading()
+                }
+            }
+            AnimatedVisibility(visible = success) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Done", fontFamily = font1)
+                }
+            }
+            LaunchedEffect(success) {
+                if (success) {
+                    delay(1000)
+                    finish()
                 }
             }
 
