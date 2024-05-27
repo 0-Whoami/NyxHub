@@ -1,5 +1,6 @@
 package com.nyxhub.presentation
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -8,10 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.system.Os
-import android.text.InputType
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputConnection
-import android.widget.EditText
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -47,7 +44,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeTextDefaults
@@ -124,6 +120,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(android.R.style.Theme_DeviceDefault)
+        requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
         CoroutineScope(Dispatchers.IO).launch {
             validateDir(NyxConstants.TERMUX_FILES_DIR_PATH)
             validateDir(NyxConstants.TERMUX_APPS_DIR_PATH)
@@ -246,9 +243,7 @@ class MainActivity : ComponentActivity() {
         }
 
         LaunchedEffect(key1 = time) {
-
             time += 0.01f
-
         }
     }
 
