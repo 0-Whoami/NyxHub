@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.InputStream
 
+@Stable
 abstract class LazyInterface<T>(val name : String, private val loadFrom : String) {
     var loadable : T? by mutableStateOf(null)
     protected abstract fun decodeFromStream(inp : InputStream)
