@@ -40,9 +40,9 @@ import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.nyxhub.nyx.FileChooser
+import com.nyxhub.support.FileChooser
 import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
-import com.nyxhub.nyx.key
+import com.nyxhub.support.key
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
@@ -84,7 +84,6 @@ class FontChooser : ComponentActivity() {
                         typeface.value = font
                     })
                 } catch (e: Exception) {
-                    e.printStackTrace()
                 }
             }
         }
@@ -94,7 +93,6 @@ class FontChooser : ComponentActivity() {
         try {
             currentFont.value = FontFamily(Typeface.createFromFile(file))
         } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -118,6 +116,7 @@ class FontChooser : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         setContent {
+            val customFontActivate by remember(currentFont) { mutableStateOf(file.exists()) }
             LazyList {
                 item {
                     Text(text = "Font Chooser", fontFamily = font1, color = Color.White)
@@ -125,7 +124,7 @@ class FontChooser : ComponentActivity() {
                 item {
                     FontPreview(
                         it = FontData("Current", "", currentFont),
-                        if (currentFont != default) Icons.TwoTone.Delete else null
+                        if (customFontActivate) Icons.TwoTone.Delete else null
                     ) {
                         file.delete()
                     }

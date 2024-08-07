@@ -56,7 +56,7 @@ import androidx.wear.compose.material.Text
 import com.nyxhub.presentation.font1
 import com.nyxhub.presentation.primary_color
 import com.nyxhub.presentation.surfaceColor
-import com.termux.nyxhub.R
+import com.nyxhub.R
 
 
 @OptIn(ExperimentalWearFoundationApi::class)

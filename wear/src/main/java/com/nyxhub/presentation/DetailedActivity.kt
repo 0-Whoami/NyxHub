@@ -27,7 +27,7 @@ import com.nyxhub.nyx.NyxConstants
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.LazyList
 import com.nyxhub.presentation.ui.Loading
-import com.termux.nyxhub.R
+import com.nyxhub.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

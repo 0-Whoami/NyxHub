@@ -27,7 +27,6 @@ import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.material.icons.twotone.Download
 import androidx.compose.material.icons.twotone.ExpandMore
 import androidx.compose.material.icons.twotone.Web
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +40,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Text
-import com.nyxhub.nyx.FileChooser
+import com.nyxhub.support.FileChooser
 import com.nyxhub.nyx.NyxConstants
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.Button
@@ -139,6 +138,7 @@ class BootStrapChooser : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val enableShader = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         setContent {
             LazyList(blur = loading) {
                 item { Text("Install Bootstrap", fontFamily = font1) }
@@ -153,20 +153,16 @@ class BootStrapChooser : ComponentActivity() {
                         var time by remember { mutableFloatStateOf(0f) }
                         CardWithCaption(modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .drawWithCache {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    val shader = RuntimeShader(SHADER3)
-                                    val shaderBrush = ShaderBrush(shader)
-                                    shader.setFloatUniform("size", size.width, size.height)
+                            .then(if (enableShader) Modifier.drawWithCache {
+                                val shader = RuntimeShader(SHADER3)
+                                val shaderBrush = ShaderBrush(shader)
+                                shader.setFloatUniform("size", size.width, size.height)
 
-                                    onDrawBehind {
-                                        shader.setFloatUniform("time", time)
-                                        drawRect(shaderBrush)
-                                    }
-                                } else {
-                                    onDrawBehind {}
+                                onDrawBehind {
+                                    shader.setFloatUniform("time", time.also { time += 0.005f })
+                                    drawRect(shaderBrush)
                                 }
-                            },
+                            } else Modifier),
                             height = 80,
                             icon1 = Icons.Rounded.Watch,
                             text = "Patched",
@@ -174,9 +170,6 @@ class BootStrapChooser : ComponentActivity() {
                             icon2 = Icons.TwoTone.ExpandMore,
                             icon2action = { moreOptions = !moreOptions }) {
 
-                        }
-                        LaunchedEffect(key1 = time) {
-                            time += 0.001f
                         }
                         if (moreOptions) {
                             CardWithCaption(

@@ -132,7 +132,6 @@ class PresetViewer : ComponentActivity() {
                                                 )
                                             )
                                         } catch (e: Exception) {
-                                            e.printStackTrace()
                                         }
                                     }
                                 }

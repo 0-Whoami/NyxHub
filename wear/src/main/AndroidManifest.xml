@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -18,7 +18,25 @@
         android:supportsRtl="false"
         android:theme="@android:style/Theme.DeviceDefault">
         <activity
-            android:name="com.nyxhub.nyx.FileChooser"
+            android:name="com.nyxhub.activities.EntryEditor"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true" />
+        <activity
+            android:name="com.nyxhub.activities.BatchPropertyEditor"
+            android:exported="true"
+            android:taskAffinity="" />
+        <activity
+            android:name="com.nyxhub.activities.UIEditor"
+            android:exported="true"
+            android:taskAffinity="" />
+        <activity
+            android:name="com.nyxhub.activities.Fonts"
+            android:exported="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.DeviceDefault" />
+        <activity
+            android:name="com.nyxhub.support.FileChooser"
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
@@ -40,11 +58,7 @@
             android:exported="true"
             android:noHistory="true"
             android:theme="@android:style/Theme.DeviceDefault" />
-        <activity
-            android:name="com.nyxhub.presentation.FontChooser"
-            android:exported="true"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.DeviceDefault" />
+
         <activity
             android:name="com.nyxhub.presentation.KeyEditor"
             android:excludeFromRecents="true"
@@ -78,20 +92,11 @@
             android:exported="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.DeviceDefault" />
-
         <activity
             android:name="com.nyxhub.presentation.BootStrapChooser"
             android:exported="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.DeviceDefault" />
-        <activity
-            android:name="com.nyxhub.presentation.ShellChooser"
-            android:exported="true"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.DeviceDefault" />
-        <uses-library
-            android:name="com.google.android.wearable"
-            android:required="true" />
         <!--
                Set to true if your app is Standalone, that is, it does not require the handheld
                app to run.
@@ -101,10 +106,9 @@
             android:value="true" />
 
         <activity
-            android:name="com.nyxhub.presentation.MainActivity"
+            android:name="com.nyxhub.activities.HomeScreen"
             android:exported="true"
-            android:taskAffinity=""
-            android:theme="@style/MainActivityTheme.Starting">
+            android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

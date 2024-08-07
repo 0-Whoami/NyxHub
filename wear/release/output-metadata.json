@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.termux.nyxhub",
+  "applicationId": "com.nyxhub",
   "variantName": "release",
   "elements": [
     {

@@ -12,13 +12,13 @@ tasks {
     }
 }
 android {
-    namespace = "com.termux.nyxhub"
-    compileSdk = 34
+    namespace = "com.nyxhub"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.termux.nyxhub"
+        applicationId = "com.nyxhub"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         vectorDrawables {
@@ -27,9 +27,9 @@ android {
     }
     splits {
         abi {
-            isEnable=true
+            isEnable = true
             reset()
-            include ("x86_64", "armeabi-v7a")
+            include("x86_64", "armeabi-v7a")
             isUniversalApk = false
         }
     }
@@ -39,9 +39,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             isCrunchPngs = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
@@ -62,15 +60,17 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    buildToolsVersion = "35.0.0"
 }
 
 dependencies {
     implementation(libs.horologist.compose.layout)
     implementation(libs.material.icons.extended)
     implementation(libs.play.services.wearable)
-    // General compose dependencies
     implementation(libs.activity.compose)
 
     // Compose for Wear OS Dependencies
     implementation(libs.compose.material)
+    implementation(project(":constants"))
+    implementation(libs.ui.tooling.preview.android)
 }

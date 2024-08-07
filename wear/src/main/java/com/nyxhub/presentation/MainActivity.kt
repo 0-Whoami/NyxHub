@@ -30,7 +30,6 @@ import androidx.compose.material.icons.twotone.ExpandMore
 import androidx.compose.material.icons.twotone.SettingsRemote
 import androidx.compose.material.icons.twotone.SettingsSuggest
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +50,7 @@ import androidx.wear.compose.material.TimeTextDefaults
 import com.nyxhub.nyx.NyxConstants
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.LazyList
-import com.termux.nyxhub.R
+import com.nyxhub.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,15 +59,13 @@ import java.io.File
 
 val font1 = FontFamily(Font(R.font.open_sans))
 
-fun startActivity(context: Context, cls: Class<*>) {
+fun startActivity(context : Context, cls : Class<*>) {
     context.startActivity(Intent(context, cls))
 }
 
-fun startNyx(context: Context, cmd: String? = null) {
+fun startNyx(context : Context, cmd : String? = null) {
     context.startActivity(Intent().apply {
-        setComponent(
-            ComponentName("com.termux", "com.termux.NyxActivity")
-        )
+        setComponent(ComponentName("com.termux", "com.termux.NyxActivity"))
         if (!cmd.isNullOrBlank()) putExtra("cmd", cmd)
     })
 }
@@ -118,19 +115,12 @@ half4 main( float2 fragCoord )
 """
 
 class MainActivity : ComponentActivity() {
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {}
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {}
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState : Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(android.R.style.Theme_DeviceDefault)
-        requestPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        )
+        requestPermissionLauncher.launch(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE))
         CoroutineScope(Dispatchers.IO).launch {
             validateDir(NyxConstants.TERMUX_FILES_DIR_PATH)
             validateDir(NyxConstants.TERMUX_APPS_DIR_PATH)
@@ -145,6 +135,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val shape = RoundedCornerShape(25)
+    private val enableShader = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     @Composable
     fun Page_1() {
@@ -152,162 +143,111 @@ class MainActivity : ComponentActivity() {
 
         LazyList {
             item {
-                Text(
-                    text = TimeTextDefaults.timeSource("hh:mm").currentTime, fontFamily = font1
-                )
+                Text(text = TimeTextDefaults.timeSource("hh:mm").currentTime, fontFamily = font1)
             }
             item {
                 Button(icon = Icons.TwoTone.SettingsSuggest,
-                    text = "Setup",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .clip(shape)
-                        .drawWithCache {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                val shader = RuntimeShader(SHADER2)
-                                val shaderBrush = ShaderBrush(shader)
-                                shader.setFloatUniform("size", size.width, size.height)
-
-                                onDrawBehind {
-                                    shader.setFloatUniform("time", time)
-                                    drawRect(shaderBrush)
-                                }
-                            } else {
-                                onDrawBehind {
-                                    drawRect(surfaceColor)
-                                }
-                            }
-                        }
-                        .padding(horizontal = 35.dp)) {
+                       text = "Setup",
+                       modifier = Modifier
+                           .fillMaxWidth()
+                           .height(80.dp)
+                           .clip(shape)
+                           .then(if (enableShader) Modifier.drawWithCache {
+                               val shader = RuntimeShader(SHADER2)
+                               val shaderBrush = ShaderBrush(shader)
+                               shader.setFloatUniform("size", size.width, size.height)
+                               onDrawBehind {
+                                   shader.setFloatUniform("time", time.also { time += 0.01f })
+                                   drawRect(shaderBrush)
+                               }
+                           } else Modifier.background(surfaceColor))
+                           .padding(horizontal = 35.dp)) {
                     startActivity(this@MainActivity, Presets::class.java)
                 }
             }
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(85.dp)
-                ) {
+                        .height(85.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        modifier = Modifier
-                            .clickable {
-                                startActivity(this@MainActivity, DataChannel::class.java)
-                            }
-                            .fillMaxSize()
-                            .clip(shape)
-                            .weight(1f)
-                            .background(primary_color)) {
-                        Icon(
-                            imageVector = Icons.TwoTone.SettingsRemote,
-                            contentDescription = null,
-                            tint = Color.Black
-                        )
+                           verticalArrangement = Arrangement.SpaceEvenly,
+                           modifier = Modifier
+                               .clickable {
+                                   startActivity(this@MainActivity, DataChannel::class.java)
+                               }
+                               .fillMaxSize()
+                               .clip(shape)
+                               .weight(1f)
+                               .background(primary_color)) {
+                        Icon(imageVector = Icons.TwoTone.SettingsRemote, contentDescription = null, tint = Color.Black)
                         Text(text = "Receiver", fontFamily = font1, color = Color.Black)
                     }
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(5.dp),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .weight(1f)
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally,
+                           verticalArrangement = Arrangement.spacedBy(5.dp),
+                           modifier = Modifier
+                               .fillMaxSize()
+                               .weight(1f)) {
                         Text(text = "Script",
-                            modifier = Modifier
-                                .clickable {
-                                    startActivity(
-                                        this@MainActivity, Scripts::class.java
-                                    )
-                                }
-                                .fillMaxSize()
-                                .weight(1f)
-                                .background(surfaceColor, RoundedCornerShape(50))
-                                .wrapContentHeight(),
-                            fontFamily = font1,
-                            textAlign = TextAlign.Center)
+                             modifier = Modifier
+                                 .clickable {
+                                     startActivity(this@MainActivity, Scripts::class.java)
+                                 }
+                                 .fillMaxSize()
+                                 .weight(1f)
+                                 .background(surfaceColor, RoundedCornerShape(50))
+                                 .wrapContentHeight(),
+                             fontFamily = font1,
+                             textAlign = TextAlign.Center)
                         Icon(imageVector = Icons.Rounded.PlayArrow,
-                            null,
-                            modifier = Modifier
-                                .clickable { startNyx(this@MainActivity) }
-                                .fillMaxSize()
-                                .border(1.dp, primary_color, RoundedCornerShape(50))
-                                .weight(1f))
+                             null,
+                             modifier = Modifier
+                                 .clickable { startNyx(this@MainActivity) }
+                                 .fillMaxSize()
+                                 .border(1.dp, primary_color, RoundedCornerShape(50))
+                                 .weight(1f))
                     }
                 }
             }
             item {
-                Icon(imageVector = Icons.TwoTone.ExpandMore,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clickable {
-                            startActivity(
-                                this@MainActivity, DetailedActivity::class.java
-                            )
-                        }
-                        .fillMaxWidth())
+                Icon(imageVector = Icons.TwoTone.ExpandMore, contentDescription = null, modifier = Modifier
+                    .clickable {
+                        startActivity(this@MainActivity, DetailedActivity::class.java)
+                    }
+                    .fillMaxWidth())
             }
-        }
-
-        LaunchedEffect(key1 = time) {
-            time += 0.01f
         }
     }
 
 }
 
-fun setupStorageSymlinks(context: Context) {
+fun setupStorageSymlinks(context : Context) {
     try {
         val storageDir = NyxConstants.TERMUX_STORAGE_HOME_DIR
-        val error: Boolean = storageDir.deleteRecursively() && storageDir.mkdirs()
+        val error : Boolean = storageDir.deleteRecursively() && storageDir.mkdirs()
         if (!error) {
             return
-        }
-        // Get primary storage root "/storage/emulated/0" symlink
+        } // Get primary storage root "/storage/emulated/0" symlink
         val sharedDir = Environment.getExternalStorageDirectory()
-        Os.symlink(
-            sharedDir.absolutePath, File(storageDir, "utils").absolutePath
-        )
-        val documentsDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-        Os.symlink(
-            documentsDir.absolutePath, File(storageDir, "documents").absolutePath
-        )
-        val downloadsDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        Os.symlink(
-            downloadsDir.absolutePath, File(storageDir, "downloads").absolutePath
-        )
+        Os.symlink(sharedDir.absolutePath, File(storageDir, "utils").absolutePath)
+        val documentsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        Os.symlink(documentsDir.absolutePath, File(storageDir, "documents").absolutePath)
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        Os.symlink(downloadsDir.absolutePath, File(storageDir, "downloads").absolutePath)
         val dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-        Os.symlink(
-            dcimDir.absolutePath, File(storageDir, "dcim").absolutePath
-        )
-        val picturesDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        Os.symlink(
-            picturesDir.absolutePath, File(storageDir, "pictures").absolutePath
-        )
+        Os.symlink(dcimDir.absolutePath, File(storageDir, "dcim").absolutePath)
+        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        Os.symlink(picturesDir.absolutePath, File(storageDir, "pictures").absolutePath)
         val musicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-        Os.symlink(
-            musicDir.absolutePath, File(storageDir, "music").absolutePath
-        )
+        Os.symlink(musicDir.absolutePath, File(storageDir, "music").absolutePath)
         val moviesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        Os.symlink(
-            moviesDir.absolutePath, File(storageDir, "movies").absolutePath
-        )
-        val podcastsDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
-        Os.symlink(
-            podcastsDir.absolutePath, File(storageDir, "podcasts").absolutePath
-        )
-        val audiobooksDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
-        Os.symlink(
-            audiobooksDir.absolutePath, File(storageDir, "audiobooks").absolutePath
-        )
+        Os.symlink(moviesDir.absolutePath, File(storageDir, "movies").absolutePath)
+        val podcastsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PODCASTS)
+        Os.symlink(podcastsDir.absolutePath, File(storageDir, "podcasts").absolutePath)
+        val audiobooksDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_AUDIOBOOKS)
+        Os.symlink(audiobooksDir.absolutePath, File(storageDir, "audiobooks").absolutePath)
 
         // Create "Android/data/com.termux" symlinks
         var dirs = context.getExternalFilesDirs(null)
@@ -315,24 +255,18 @@ fun setupStorageSymlinks(context: Context) {
             for (i in dirs.indices) {
                 val dir = dirs[i] ?: continue
                 val symlinkName = "external-$i"
-                Os.symlink(
-                    dir.absolutePath, File(storageDir, symlinkName).absolutePath
-                )
+                Os.symlink(dir.absolutePath, File(storageDir, symlinkName).absolutePath)
             }
-        }
-        // Create "Android/media/com.termux" symlinks
+        } // Create "Android/media/com.termux" symlinks
         dirs = context.externalMediaDirs
         if (dirs != null && dirs.isNotEmpty()) {
             for (i in dirs.indices) {
                 val dir = dirs[i] ?: continue
                 val symlinkName = "media-$i"
-                Os.symlink(
-                    dir.absolutePath, File(storageDir, symlinkName).absolutePath
-                )
+                Os.symlink(dir.absolutePath, File(storageDir, symlinkName).absolutePath)
             }
         }
-    } catch (error: Exception) {
-        error.printStackTrace()
+    } catch (error : Exception) {
     }
 
 }

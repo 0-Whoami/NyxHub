@@ -80,9 +80,9 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.nyxhub.nyx.FileChooser
+import com.nyxhub.support.FileChooser
 import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
-import com.nyxhub.nyx.Properties
+import com.nyxhub.data.Properties
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.Button
 import com.nyxhub.presentation.ui.ButtonTransparent
@@ -171,11 +171,11 @@ class BackgroundManager : ComponentActivity() {
     override fun onPause() {
         super.onPause()
         CoroutineScope(Dispatchers.IO).launch {
-            properties.put("font_size", font_size)
-            properties.put("blur", enableBlur)
-            properties.put("border", enableBorder)
-            properties.put("transcript_rows", transcriptRows)
-            properties.save()
+//            properties.put("font_size", font_size)
+//            properties.put("blur", enableBlur)
+//            properties.put("border", enableBorder)
+//            properties.put("transcript_rows", transcriptRows)
+//            properties.save()
         }
     }
 

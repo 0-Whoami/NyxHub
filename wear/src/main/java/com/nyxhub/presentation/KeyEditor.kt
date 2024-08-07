@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +24,6 @@ import androidx.compose.material.icons.twotone.Done
 import androidx.compose.material.icons.twotone.KeyboardCommandKey
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,20 +40,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
-import com.nyxhub.nyx.Properties
+import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
+import com.nyxhub.data.Properties
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
 import com.nyxhub.presentation.ui.LazyList
-import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
-const val KEYS_FILE_NAME="keys"
+
+const val KEYS_FILE_NAME = "keys"
+
 class KeyEditor : ComponentActivity() {
     private var blur by mutableStateOf(false)
-    private val properties = Properties("$CONFIG_PATH/$KEYS_FILE_NAME")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        loadKeys()
         setContent {
-
+            val properties = remember { Properties("$CONFIG_PATH/$KEYS_FILE_NAME") }
             var labelText by remember { mutableStateOf("") }
             var keycodeText by remember { mutableStateOf("") }
 
@@ -69,34 +67,35 @@ class KeyEditor : ComponentActivity() {
                         fontFamily = font1
                     )
                 }
-                items(changedMap.size) {
-                    val label = changedMap.keys.elementAt(it)
-                    val keycode = changedMap.values.elementAt(it)
-                    Row(modifier = Modifier
-                        .clickable {
-                            labelText = label
-                            keycodeText = keycode.toString()
-                        }
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .background(
-                            Color(0xff242124), RoundedCornerShape(25)
-                        ),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(
-                            text = "${it + 1}. $label : $keycode",
-                            modifier = Modifier.padding(start = 10.dp),
-                            fontFamily = font1,
-                            color = Color(0xffFEF9EF)
-                        )
-                        Icon(imageVector = Icons.TwoTone.Delete,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .clickable { changedMap.remove(label) }
-                                .padding(5.dp))
-                    }
-                }
+//                properties.forEach { key, value ->
+//                    item {
+//                        Row(modifier = Modifier
+//                            .clickable {
+//                                labelText = key
+//                                keycodeText = value
+//                            }
+//                            .fillMaxWidth()
+//                            .height(50.dp)
+//                            .background(
+//                                Color(0xff242124), RoundedCornerShape(25)
+//                            ),
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            horizontalArrangement = Arrangement.SpaceBetween) {
+//                            Text(
+//                                text = " $key : $value",
+//                                modifier = Modifier.padding(start = 10.dp),
+//                                fontFamily = font1,
+//                                color = Color(0xffFEF9EF)
+//                            )
+//                            Icon(imageVector = Icons.TwoTone.Delete,
+//                                contentDescription = null,
+//                                modifier = Modifier
+//                                    .clickable { properties.remove(key) }
+//                                    .padding(5.dp))
+//                        }
+//                    }
+//                }
+
                 item {
                     Icon(imageVector = Icons.TwoTone.Add,
                         contentDescription = null,
@@ -111,7 +110,7 @@ class KeyEditor : ComponentActivity() {
                                 primary_color, RoundedCornerShape(50)
                             )
                             .padding(10.dp)
-                            .fillMaxWidth(if(changedMap.size==0) 1f else 0.5f))
+                            .fillMaxWidth(0.5f))
                 }
             }
 
@@ -189,7 +188,8 @@ class KeyEditor : ComponentActivity() {
                     item {
                         Button_1(icon = Icons.TwoTone.Done, text = "Add") {
                             if (keycodeText.isEmpty()) return@Button_1
-                            changedMap[labelText] = keycodeText.toInt()
+//                            properties.put(labelText, keycodeText)
+                            properties.save()
                         }
                     }
                     item { Button_1(icon = Icons.TwoTone.Cancel, text = "Cancel") }
@@ -203,28 +203,6 @@ class KeyEditor : ComponentActivity() {
     @Composable
     fun Button_1(icon: ImageVector, text: String, onClick: () -> Unit = {}) {
         ButtonTransparent(icon = icon, text = text, onClick = { onClick();blur = false })
-    }
-
-    override fun onPause() {
-        super.onPause()
-        saveKeys()
-    }
-
-    private val changedMap = mutableStateMapOf<String, Int>()
-
-    private fun loadKeys() {
-        changedMap.clear()
-        properties.forEach { key, value ->
-            changedMap[key] = value.toInt()
-        }
-    }
-
-    private fun saveKeys() {
-        properties.map.clear()
-        changedMap.forEach { (key, value) ->
-            properties.map[key] = value.toString()
-        }
-        properties.save()
     }
 
 

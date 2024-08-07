@@ -38,18 +38,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import com.nyxhub.nyx.NyxConstants.CONFIG_PATH
-import com.nyxhub.nyx.Properties
+import com.nyxhub.data.Properties
 import com.nyxhub.presentation.ui.AnimatedVisibility
 import com.nyxhub.presentation.ui.ButtonTransparent
 import com.nyxhub.presentation.ui.LazyList
@@ -336,132 +333,132 @@ class ColorChanger : ComponentActivity() {
                 "- Color 256: Foreground color\n" +
                 "- Color 257: Background color\n" +
                 "- Color 258: Cursor color\n"
-        setContent {
-            rememberScalingLazyListState()
-            var index by remember { mutableIntStateOf(0) }
-            var text by remember { mutableStateOf("#000000") }
-            LazyList(blur = blur) {
-                item {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.animateContentSize()
-                    ) {
-                        var help by remember {
-                            mutableStateOf(false)
-                        }
-
-                        if (help) {
-                            Text(
-                                text = msg,
-                                color = Color.White,
-                                fontFamily = font1
-                            )
-                        } else {
-                            Text(
-                                text = "Colors",
-                                textAlign = TextAlign.Center,
-                                color = Color.White,
-                                fontFamily = font1
-                            )
-                        }
-                        Icon(imageVector = Icons.AutoMirrored.TwoTone.Help,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .clickable { help = !help }
-                                .padding(5.dp),
-                            tint = Color.White)
-
-                    }
-                }
-                items(colors.size) {
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clickable {
-                                index = it;text = "#${colors[it].toHexString()}"; blur = true
-                            }
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(surfaceColor)
-                            .height(60.dp)
-                            .fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier
-                                .aspectRatio(1f)
-                                .background(color = Color(colors[it]))
-                        )
-                        Text(
-                            text = when (it) {
-                                256 -> "Foreground Color"
-                                257 -> "Background Color"
-                                258 -> "Cursor Color"
-                                else -> "Color $it"
-                            },
-                            color = Color(0xffFEF9EF),
-                            fontFamily = font1,
-                            modifier = Modifier.padding(10.dp)
-                        )
-                        if (DEFAULT_COLORSCHEME[it] != colors[it]) Icon(imageVector = Icons.TwoTone.RestartAlt,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .clickable {
-                                    colors[it] = DEFAULT_COLORSCHEME[it]
-                                    properties.remove(it)
-                                }
-                                .padding(10.dp),
-                            tint = Color.White)
-                    }
-
-                }
-
-
-            }
-            AnimatedVisibility(visible = blur) {
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(10.dp)
-                ) {
-                    val newColor = try {
-                        Color(text.toColorInt())
-                    } catch (e: Exception) {
-                        Color.White
-                    }
-                    BasicTextField(
-                        decorationBox = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .border(1.dp, newColor, RoundedCornerShape(25))
-                                    .padding(10.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.TwoTone.FormatColorText,
-                                    contentDescription = null,
-                                    tint = newColor
-                                )
-                                it()
-                            }
-                        },
-                        value = text,
-                        modifier = Modifier.fillMaxWidth(0.7f),
-                        textStyle = TextStyle(
-                            color = newColor, fontFamily = font1
-                        ),
-                        onValueChange = { text = it },
-                        cursorBrush = SolidColor(newColor)
-                    )
-                    Button(icon = Icons.TwoTone.Done, text = "Apply") {
-                        colors[index] = newColor.toArgb()
-                        properties.put(index, colors[index])
-                    }
-                    Button(icon = Icons.TwoTone.Cancel, text = "Cancel")
-                }
-            }
-
-
-        }
+//        setContent {
+//            rememberScalingLazyListState()
+//            var index by remember { mutableIntStateOf(0) }
+//            var text by remember { mutableStateOf("#000000") }
+//            LazyList(blur = blur) {
+//                item {
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.Center,
+//                        modifier = Modifier.animateContentSize()
+//                    ) {
+//                        var help by remember {
+//                            mutableStateOf(false)
+//                        }
+//
+//                        if (help) {
+//                            Text(
+//                                text = msg,
+//                                color = Color.White,
+//                                fontFamily = font1
+//                            )
+//                        } else {
+//                            Text(
+//                                text = "Colors",
+//                                textAlign = TextAlign.Center,
+//                                color = Color.White,
+//                                fontFamily = font1
+//                            )
+//                        }
+//                        Icon(imageVector = Icons.AutoMirrored.TwoTone.Help,
+//                            contentDescription = null,
+//                            modifier = Modifier
+//                                .clickable { help = !help }
+//                                .padding(5.dp),
+//                            tint = Color.White)
+//
+//                    }
+//                }
+//                items(colors.size) {
+//                    Row(verticalAlignment = Alignment.CenterVertically,
+//                        modifier = Modifier
+//                            .clickable {
+//                                index = it;text = "#${colors[it].toHexString()}"; blur = true
+//                            }
+//                            .clip(RoundedCornerShape(10.dp))
+//                            .background(surfaceColor)
+//                            .height(60.dp)
+//                            .fillMaxWidth()) {
+//                        Box(
+//                            modifier = Modifier
+//                                .aspectRatio(1f)
+//                                .background(color = Color(colors[it]))
+//                        )
+//                        Text(
+//                            text = when (it) {
+//                                256 -> "Foreground Color"
+//                                257 -> "Background Color"
+//                                258 -> "Cursor Color"
+//                                else -> "Color $it"
+//                            },
+//                            color = Color(0xffFEF9EF),
+//                            fontFamily = font1,
+//                            modifier = Modifier.padding(10.dp)
+//                        )
+//                        if (DEFAULT_COLORSCHEME[it] != colors[it]) Icon(imageVector = Icons.TwoTone.RestartAlt,
+//                            contentDescription = null,
+//                            modifier = Modifier
+//                                .clickable {
+//                                    colors[it] = DEFAULT_COLORSCHEME[it]
+//                                    properties.remove(it)
+//                                }
+//                                .padding(10.dp),
+//                            tint = Color.White)
+//                    }
+//
+//                }
+//
+//
+//            }
+//            AnimatedVisibility(visible = blur) {
+//                Column(
+//                    verticalArrangement = Arrangement.Center,
+//                    horizontalAlignment = Alignment.CenterHorizontally,
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(10.dp)
+//                ) {
+//                    val newColor = try {
+//                        Color(text.toColorInt())
+//                    } catch (e: Exception) {
+//                        Color.White
+//                    }
+//                    BasicTextField(
+//                        decorationBox = {
+//                            Row(
+//                                verticalAlignment = Alignment.CenterVertically,
+//                                modifier = Modifier
+//                                    .border(1.dp, newColor, RoundedCornerShape(25))
+//                                    .padding(10.dp)
+//                            ) {
+//                                Icon(
+//                                    imageVector = Icons.TwoTone.FormatColorText,
+//                                    contentDescription = null,
+//                                    tint = newColor
+//                                )
+//                                it()
+//                            }
+//                        },
+//                        value = text,
+//                        modifier = Modifier.fillMaxWidth(0.7f),
+//                        textStyle = TextStyle(
+//                            color = newColor, fontFamily = font1
+//                        ),
+//                        onValueChange = { text = it },
+//                        cursorBrush = SolidColor(newColor)
+//                    )
+//                    Button(icon = Icons.TwoTone.Done, text = "Apply") {
+//                        colors[index] = newColor.toArgb()
+//                        properties.put(index, colors[index])
+//                    }
+//                    Button(icon = Icons.TwoTone.Cancel, text = "Cancel")
+//                }
+//            }
+//
+//
+//        }
     }
 
     @Composable
@@ -478,9 +475,9 @@ class ColorChanger : ComponentActivity() {
 
 
     private fun loadColors() {
-        properties.forEach { key, value ->
-            colors[key.toInt()] = value.toInt()
-        }
+//        properties.forEach { key, value ->
+//            colors[key.toInt()] = value.toInt()
+//        }
     }
 }
 
