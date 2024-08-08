@@ -25,8 +25,8 @@ import com.nyxhub.base.SwappableCard
 import com.nyxhub.base.Text
 import com.nyxhub.base.VerticalDivider
 import com.nyxhub.base.cornerDotBorder
+import com.nyxhub.base.primary_color
 import com.nyxhub.data.Properties
-import com.nyxhub.presentation.primary_color
 import nyx.constants.Constant
 
 class BatchPropertyEditor : ComponentActivity() {
@@ -43,7 +43,7 @@ class BatchPropertyEditor : ComponentActivity() {
                 item { Text() }
                 item { Heading(if (enableColorPreview) "TERM COLORS" else "EXTRA KEYS") }
                 itemsIndexed(propertiesList) { i, it ->
-                    SwappableCard(deleteAction = { properties.remove(it) },
+                    SwappableCard(deleteroot = { properties.remove(it) },
                                   editAction = { EntryEditor.editEntry(this@BatchPropertyEditor, it, properties) }) {
                         val color = remember {
                             if (enableColorPreview) try {

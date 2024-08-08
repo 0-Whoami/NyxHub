@@ -25,16 +25,17 @@ import com.nyxhub.base.Heading
 import com.nyxhub.base.LazyListWrapper
 import com.nyxhub.base.Loading
 import com.nyxhub.base.NotifyingAnimation
+import com.nyxhub.base.SwappableCard
 import com.nyxhub.base.Text
 import com.nyxhub.base.VerticalDivider
+import com.nyxhub.base.primary_color
 import com.nyxhub.network.LazyInterface
 import com.nyxhub.network.NetworkLazy
+import com.nyxhub.network.apiUrl
 import com.nyxhub.network.download_url
 import com.nyxhub.network.getJsonData
 import com.nyxhub.network.name
 import com.nyxhub.network.type
-import com.nyxhub.presentation.apiUrl
-import com.nyxhub.presentation.primary_color
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -71,14 +72,16 @@ class Fonts : ComponentActivity() {
                 item { Text() }
                 item { Heading("FONTS") }
                 item {
-                    Box(modifier = Modifier
-                        .padding(5.dp)
-                        .border(1.dp, primary_color)) {
-                        Text("CURRENT FONT", fontFamily = currentFont, modifier = Modifier
-                            .fillParentMaxWidth()
-                            .height(50.dp)
-                            .wrapContentHeight())
-                        NotifyingAnimation(enable = anim, onFinished = { anim = false })
+                    SwappableCard(deleteroot = { fontFile.delete() }) {
+                        Box(modifier = Modifier
+                            .padding(5.dp)
+                            .border(1.dp, primary_color)) {
+                            Text("CURRENT FONT", fontFamily = currentFont, modifier = Modifier
+                                .fillParentMaxWidth()
+                                .height(50.dp)
+                                .wrapContentHeight())
+                            NotifyingAnimation(enable = anim, onFinished = { anim = false })
+                        }
                     }
                 }
                 itemsIndexed(fonts) { index, item ->

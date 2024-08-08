@@ -23,10 +23,10 @@ import androidx.compose.ui.unit.dp
 import com.google.android.horologist.compose.layout.fillMaxRectangle
 import com.nyxhub.base.Text
 import com.nyxhub.base.TextField
+import com.nyxhub.base.primary_color
+import com.nyxhub.base.surfaceColor
 import com.nyxhub.data.Entry
 import com.nyxhub.data.Properties
-import com.nyxhub.presentation.primary_color
-import com.nyxhub.presentation.surfaceColor
 
 class EntryEditor : ComponentActivity() {
     override fun onCreate(savedInstanceState : Bundle?) {
@@ -71,8 +71,8 @@ class EntryEditor : ComponentActivity() {
             start(context)
         }
 
-        fun editEntry(context : Context, key : String,defaultValue : Any?, properties : Properties, readOnlyKey : Boolean = true) {
-            editEntry(context, properties.getEntry(key)?: Entry(key, defaultValue.toString()), properties, readOnlyKey)
+        fun editEntry(context : Context, key : String, defaultValue : Any?, properties : Properties, readOnlyKey : Boolean = true) {
+            editEntry(context, properties.getEntry(key) ?: Entry(key, defaultValue.toString()), properties, readOnlyKey)
         }
 
         fun addEntry(context : Context, properties : Properties) {

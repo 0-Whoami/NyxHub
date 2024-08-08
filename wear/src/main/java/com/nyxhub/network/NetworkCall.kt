@@ -13,8 +13,8 @@ const val apiUrl = "https://api.github.com/repos/0-Whoami/nyx_presets/contents"
 const val download_url = "download_url"
 const val name = "name"
 const val type = "type"
-fun getJsonData(apiUrl : String, onSuccess : (JSONObject) -> Unit) {
-    download(apiUrl) { stream ->
+fun getJsonData(apiUrl : String, failure : () -> Unit = {}, onSuccess : (JSONObject) -> Unit) {
+    download(apiUrl, failure) { stream ->
         val reader = BufferedReader(InputStreamReader(stream))
         val response = StringBuilder()
 

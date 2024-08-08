@@ -65,7 +65,6 @@ android {
 
 dependencies {
     implementation(libs.horologist.compose.layout)
-    implementation(libs.material.icons.extended)
     implementation(libs.play.services.wearable)
     implementation(libs.activity.compose)
 

@@ -1,6 +1,6 @@
 package com.nyxhub.base
 
-import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -72,14 +72,14 @@ import androidx.wear.compose.material.LocalTextStyle
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeTextDefaults
 import com.nyxhub.R
-import com.nyxhub.presentation.primary_color
-import com.nyxhub.presentation.surfaceColor
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
 
 val font = FontFamily(Font(R.font.mono))
 val selColor = Color.White.copy(alpha = 0.05f)
+val primary_color = Color.White
+val surfaceColor = Color.Black
 
 @Composable
 fun Card(text : String,
@@ -104,9 +104,9 @@ fun Card(text : String,
 }
 
 @Composable
-fun Loading(modifier : Modifier = Modifier) {
+fun Loading() {
     val angle by rememberInfiniteTransition("").animateFloat(2.356f, 5.498f, infiniteRepeatable(tween()), "")
-    Canvas(modifier
+    Canvas(Modifier
                .size(50.dp)
                .padding(5.dp)) {
         val x = size.minDimension / 2
@@ -227,7 +227,7 @@ fun VerticalDivider() {
 @Composable
 fun NotifyingAnimation(text : String = "APPLIED!", enable : Boolean = true, onFinished : () -> Unit = {}) {
     val animatedWidth by animateFloatAsState(if (enable) 1f else 0f,
-                                             animationSpec = tween(1000, easing = FastOutLinearInEasing),
+                                             animationSpec = tween(800, easing = CubicBezierEasing(0.68f, -0.55f, 0.265f, 1.55f)),
                                              label = "",
                                              finishedListener = { if (it == 1f) onFinished() })
     com.nyxhub.base.Text(text,
@@ -243,29 +243,35 @@ fun NotifyingAnimation(text : String = "APPLIED!", enable : Boolean = true, onFi
 
 @OptIn(ExperimentalWearFoundationApi::class)
 @Composable
-fun SwappableCard(deleteAction : () -> Unit, editAction : () -> Unit, composable : @Composable () -> Unit) {
+fun SwappableCard(deleteroot : () -> Unit, editAction : (() -> Unit)? = null, composable : @Composable () -> Unit) {
     val revealState = rememberRevealState()
     val coroutine = rememberCoroutineScope()
+    val deleteAction = remember {
+        {
+            coroutine.launch {
+                revealState.animateTo(RevealValue.Revealed);deleteroot();revealState.animateTo(RevealValue.Covered)
+            }
+        }
+
+    }
     SwipeToReveal(primaryAction = {
         com.nyxhub.base.Text("DELETE",
                              Modifier
                                  .background(primary_color)
-                                 .clickable {
-                                     coroutine.launch {
-                                         revealState.animateTo(RevealValue.Revealed);deleteAction();revealState.animateTo(RevealValue.Covered)
-                                     }
-                                 }
-                                 .fillMaxSize()
-                                 .wrapContentSize(), softWrap = false, color = surfaceColor)
-    }, state = revealState, onFullSwipe = deleteAction, secondaryAction = {
-        com.nyxhub.base.Text("EDIT",
-                             Modifier
-                                 .background(primary_color)
-                                 .clickable { editAction();coroutine.launch { revealState.animateTo(RevealValue.Covered) } }
+                                 .clickable { deleteAction() }
                                  .fillMaxSize()
                                  .wrapContentSize(),
                              softWrap = false,
                              color = surfaceColor)
+    }, state = revealState, onFullSwipe = { deleteAction() }, secondaryAction = {
+        if (editAction != null) com.nyxhub.base.Text("EDIT",
+                                                     Modifier
+                                                         .background(primary_color)
+                                                         .clickable { editAction();coroutine.launch { revealState.animateTo(RevealValue.Covered) } }
+                                                         .fillMaxSize()
+                                                         .wrapContentSize(),
+                                                     softWrap = false,
+                                                     color = surfaceColor)
     }, content = composable)
 }
 

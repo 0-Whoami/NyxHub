@@ -27,8 +27,8 @@ import com.nyxhub.base.LazyListWrapper
 import com.nyxhub.base.Text
 import com.nyxhub.base.VerticalDivider
 import com.nyxhub.base.cornerBorder
+import com.nyxhub.base.primary_color
 import com.nyxhub.base.time
-import com.nyxhub.presentation.primary_color
 
 class HomeScreen : ComponentActivity() {
     override fun onCreate(savedInstanceState : Bundle?) {

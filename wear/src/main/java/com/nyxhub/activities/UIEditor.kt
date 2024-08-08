@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,9 +44,9 @@ class UIEditor : ComponentActivity() {
             var enableBorder by remember {
                 mutableStateOf(properties.getBoolean(Constant.KEY_ENABLE_BORDER, Constant.DEFAULT_ENABLE_BORDER))
             }
-            val transcriptRows = remember(prop) { properties.getInt(Constant.KEY_TRANSCRIPT_ROWS, Constant.DEFAULT_TRANSCRIPT_ROWS) }
-            val cornerRadius = remember(prop) { properties.getInt(Constant.KEY_CORNER_RADIUS, Constant.DEFAULT_CORNER_RADIUS) }
-            val fontSize = remember(prop) { properties.getInt(Constant.KEY_FONT_SIZE, Constant.DEFAULT_FONT_SIZE) }
+            val transcriptRows by remember { derivedStateOf { properties.getInt(Constant.KEY_TRANSCRIPT_ROWS, Constant.DEFAULT_TRANSCRIPT_ROWS) } }
+            val cornerRadius by remember { derivedStateOf { properties.getInt(Constant.KEY_CORNER_RADIUS, Constant.DEFAULT_CORNER_RADIUS) } }
+            val fontSize by remember { derivedStateOf { properties.getInt(Constant.KEY_FONT_SIZE, Constant.DEFAULT_FONT_SIZE) } }
             LazyListWrapper {
                 item { Text() }
                 item { Heading("UI") }
